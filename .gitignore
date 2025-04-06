@@ -1,0 +1,4 @@
+data/*
+logs/*
+outputs/analysis/*
+.directory.txt
