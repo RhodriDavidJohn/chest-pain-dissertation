@@ -1,4 +1,4 @@
 data/*
 logs/*
-outputs/analysis/*
-.directory.txt
+models/*
+code/utils/__pycache__
