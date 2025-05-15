@@ -7,12 +7,16 @@
 
 # imports
 import configparser
-import os
 import pandas as pd
+import numpy as np
+
+from utils.helpers import logger_setup
 
 
-# change the working directory
-#os.chdir('../')
+
+# set up logger
+# -------------
+LOGGER = logger_setup(filename='data_processing.log')
 
 
 # load the config and pull information
@@ -24,10 +28,13 @@ clean_data_path = config.get('data', 'clean_data_path')
 
 drop_columns = config.get('processing', 'drop_columns').replace('\n', '').replace(' ', '').split(',')
 comorbidities = config.get('processing', 'comorbidities').replace('\n', '').replace(' ', '').split(',')
+tnt_threshold = int(config.get('processing', 'tnt_threshold'))
 
 
 # load data
 df = pd.read_csv(raw_data_path, index_col=0).reset_index(drop=True)
+
+LOGGER.info("Loaded the raw data")
 
 # remove unneccesary columns
 df = df.drop(columns=drop_columns).copy()
@@ -47,5 +54,23 @@ df['sex'] = df['sex'].fillna('unknown')
 df['smoking'] = df['smoking'].fillna('unknown')
 
 
+# group large test results
+df['first_tnt_24hr_int'] = [tnt_threshold+1 if x>tnt_threshold else x for x in df['first_tnt_24hr_int']]
+df['max_tnt_24hr_int'] = [tnt_threshold+1 if x>tnt_threshold else x for x in df['max_tnt_24hr_int']]
+
+
+# derive variable which signals is a patient was transfered from
+# one site to another between a&e and ip
+transfered = df['site_ae']!=df['site_ip']
+df['transfered_dv'] = np.where(transfered, 1, 0)
+
+LOGGER.info("Finished processing data")
+
+
 # save the processed data
-df.to_csv(clean_data_path)
+df.to_csv(clean_data_path, index=False)
+
+LOGGER.info(f"Saved cleaned data to {clean_data_path}")
+
+
+LOGGER.critical("Script finished")
