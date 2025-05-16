@@ -8,10 +8,8 @@
 # imports
 # -------
 import configparser
-import os
 import time
 import pandas as pd
-import joblib
 
 from sklearn.model_selection import train_test_split
 from sklearn.impute import SimpleImputer
@@ -26,7 +24,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.neural_network import MLPClassifier
 
-from utils.helpers import logger_setup, tune_model
+from utils.helpers import logger_setup, tune_model, save_model
 
 
 
@@ -245,13 +243,10 @@ best_model = best_model_df.loc[0, 'model']
 
 # save models
 # -----------
-os.makedirs(os.path.dirname(base_model_filename), exist_ok=True)
-joblib.dump(base_model, base_model_filename)
-LOGGER.info(f"Saved base model to {base_model_filename} successfully")
+LOGGER.info("Saving models...")
 
-os.makedirs(os.path.dirname(best_model_filename), exist_ok=True)
-joblib.dump(best_model, best_model_filename)
-LOGGER.info(f"Saved base model to {best_model_filename} successfully")
+save_model(base_model, base_model_filename, LOGGER)
+save_model(best_model, best_model_filename, LOGGER)
 
 
 
