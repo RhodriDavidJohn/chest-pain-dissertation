@@ -24,7 +24,11 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.neural_network import MLPClassifier
 
-from utils.helpers import logger_setup, tune_model, save_model
+from utils.helpers import (logger_setup,
+                           load_csv,
+                           save_to_csv,
+                           tune_model,
+                           save_model)
 
 
 
@@ -63,7 +67,7 @@ seed = int(config.get('global', 'random_seed'))
 # ---------
 LOGGER.info("Loading data...")
 
-df = pd.read_csv(clean_data_path)
+df = load_csv(clean_data_path, LOGGER)
 
 # split data into features and outcome
 X = df.drop(outcome_variable, axis=1).copy()
@@ -83,8 +87,8 @@ X_train, X_test, y_train, y_test = train_test_split(
 training_data = X_train.join(y_train)
 testing_data = X_test.join(y_test)
 
-training_data.to_csv(train_data_path, index=False)
-testing_data.to_csv(test_data_path, index=False)
+save_to_csv(training_data, train_data_path, LOGGER)
+save_to_csv(testing_data, test_data_path, LOGGER)
 
 # drop nhs_number from X data
 X_train = X_train.drop('nhs_number', axis=1).copy()
