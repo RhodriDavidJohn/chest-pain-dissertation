@@ -77,7 +77,5 @@ LOGGER.info("Finished processing data")
 # save the processed data
 save_to_csv(df, clean_data_path, LOGGER)
 
-LOGGER.info(f"Saved cleaned data to {clean_data_path}")
-
 
 LOGGER.critical("Script finished")
