@@ -36,7 +36,7 @@ LOGGER = logger_setup(filename='model_development_death.log')
 # load the config and pull information
 # ------------------------------------
 config = configparser.ConfigParser()
-config.read('config.ini')
+config.read('config_death.ini')
 
 clean_data_path = config.get('data', 'clean_data_path')
 train_data_path = config.get('data', 'train_data_path')
@@ -45,7 +45,6 @@ base_model_filename = config.get('model_development', 'base_model_filename')
 best_model_filename = config.get('model_development', 'best_model_filename')
 
 outcome_variable = config.get('model_development', 'outcome')
-outcome_variable = 'death_precise'
 
 categorical_features = (config.get('model_development', 'categorical_features')
                         .replace('\n', '').replace(' ', '').split(','))

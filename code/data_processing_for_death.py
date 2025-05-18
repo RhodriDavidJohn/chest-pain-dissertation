@@ -21,14 +21,13 @@ LOGGER = logger_setup(filename='data_processing_for_death.log')
 
 # load the config and pull information
 config = configparser.ConfigParser()
-config.read('config.ini')
+config.read('config_death.ini')
 
 raw_data_path = config.get('data', 'raw_data_path')
 clean_data_path = config.get('data', 'clean_data_path')
 
 drop_columns = config.get('processing', 'drop_columns').replace('\n', '').replace(' ', '').split(',')
-drop_columns.remove('death_precise')
-drop_columns.append('subsequent_mi_30days_diagnosis')
+
 comorbidities = config.get('processing', 'comorbidities').replace('\n', '').replace(' ', '').split(',')
 tnt_threshold = int(config.get('processing', 'tnt_threshold'))
 
@@ -76,7 +75,6 @@ LOGGER.info("Finished processing data")
 
 
 # save the processed data
-clean_data_path = "data/clean/processed_dataset_death.csv"
 save_to_csv(df, clean_data_path, LOGGER)
 
 LOGGER.info(f"Saved cleaned data to {clean_data_path}")
