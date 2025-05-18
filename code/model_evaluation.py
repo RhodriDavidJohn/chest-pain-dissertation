@@ -28,7 +28,7 @@ ml_metrics_path = config.get('evaluation', 'ml_metrics_path')
 
 # load the test data
 LOGGER.info("Loading test data...")
-test_data = hlp.load_csv(test_data_path)
+test_data = hlp.load_csv(test_data_path, LOGGER)
 
 X = test_data.drop(['nhs_number', outcome_variable], axis=1).copy()
 y = test_data[outcome_variable].copy()
@@ -38,16 +38,16 @@ LOGGER.info("Test data loaded successfully")
 
 # load the ml models
 LOGGER.info("Loading models...")
-base_model = hlp.load_model(base_model_filename)
-best_model = hlp.load_model(best_model_filename)
+base_model = hlp.load_model(base_model_filename, LOGGER)
+best_model = hlp.load_model(best_model_filename, LOGGER)
 
 
 # get the model names
 base_model_name = hlp.get_model_name(base_model)
-base_model_name = hlp.map_model_name(base_model_name)
+base_model_name = hlp.map_model_name(base_model_name, LOGGER)
 
 best_model_name = hlp.get_model_name(best_model)
-best_model_name = hlp.map_model_name(best_model_name)
+best_model_name = hlp.map_model_name(best_model_name, LOGGER)
 
 
 # get the evaluation metrics
@@ -61,4 +61,4 @@ ml_metrics = pd.concat([base_model_metrics, best_model_metrics], axis=0).T
 
 LOGGER.info("Evaluation metrics calculated successfully")
 LOGGER.info(f"\n{ml_metrics}")
-hlp.save_model(ml_metrics, ml_metrics_path)
+hlp.save_model(ml_metrics, ml_metrics_path, LOGGER)
