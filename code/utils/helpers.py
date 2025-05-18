@@ -161,7 +161,7 @@ def load_model(filepath: str, LOGGER: logging.Logger):
 
 
 def get_model_name(pipe: Pipeline) -> str:
-    return pipe.named_steps.keys()[-1]
+    return list(pipe.named_steps.keys())[-1]
 
 
 def map_model_name(model_name: str, LOGGER: logging.Logger) -> str:
