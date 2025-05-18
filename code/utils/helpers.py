@@ -6,7 +6,7 @@ import time
 import joblib
 import logging
 from sklearn.pipeline import Pipeline
-from sklearn.model_selection import StratifiedKFold, GridSearchCV
+from sklearn.model_selection import GridSearchCV
 import matplotlib.pyplot as plt
 import shap
 from sklearn.metrics import (roc_auc_score,
@@ -43,6 +43,29 @@ def logger_setup(filename: str) -> logging.Logger:
     return LOGGER
 
 
+def load_csv(filepath: str, LOGGER: logging.Logger) -> pd.DataFrame:
+
+    try:
+        df = pd.read_csv(filepath)
+        LOGGER.info(f"Data loaded successfully: {filepath}")
+        return df
+    except Exception as e:
+        LOGGER.error(f"Error loading {filepath}: {e}")
+        raise(e)
+
+
+def save_to_csv(df: pd.DataFrame, filepath: str, LOGGER: logging.Logger) -> None:
+
+    try:
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        df.to_csv(filepath, index=False)
+        LOGGER.info(f"Data saved to {filepath}")
+        return None
+    except Exception as e:
+        LOGGER.error(f"Error saving data to {filepath}: {e}")
+        raise(e)
+
+
 def tune_model(X_train,
                y_train,
                model,
@@ -69,26 +92,22 @@ def tune_model(X_train,
         (model_desc, model)
     ])
 
-    # define cross validation strategy
-    skf = StratifiedKFold(n_plits=cv, shuffle=False, random_state=42)
-
     # set up grid search object
     pipe_cv = GridSearchCV(pipe,
                            param_grid=params,
                            scoring='roc_auc',
-                           cv=skf,
+                           cv=cv,
                            n_jobs=-1,
                            verbose=0,
                            error_score=0.0)
 
     # attempt to fit the model
     try:
-        LOGGER.info(f"Tuning {model_name} model...")
         pipe_cv.fit(X, y)
         LOGGER.info(f"Model tuned successfully")
     except Exception as e:
         msg = ("The following error occured "
-               f"while tuning {model_desc}: {e}")
+               f"while tuning {model_name}: {e}")
         LOGGER.error(msg)
         raise(e)
 
