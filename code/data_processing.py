@@ -10,7 +10,7 @@ import configparser
 import pandas as pd
 import numpy as np
 
-from utils.helpers import logger_setup
+from utils.helpers import logger_setup, load_csv, save_to_csv
 
 
 
@@ -32,7 +32,8 @@ tnt_threshold = int(config.get('processing', 'tnt_threshold'))
 
 
 # load data
-df = pd.read_csv(raw_data_path, index_col=0).reset_index(drop=True)
+df = load_csv(raw_data_path, LOGGER)
+df = df.iloc[:, 1:].copy()
 
 LOGGER.info("Loaded the raw data")
 
@@ -59,6 +60,11 @@ df['first_tnt_24hr_int'] = [tnt_threshold+1 if x>tnt_threshold else x for x in d
 df['max_tnt_24hr_int'] = [tnt_threshold+1 if x>tnt_threshold else x for x in df['max_tnt_24hr_int']]
 
 
+# derive variables to capture
+# change in tnt and egfr
+df['tnt_change'] = df['max_tnt_24hr_int'] / df['first_tnt_24hr_int']
+df['egfr_change'] = df['min_egfr_24hr_int'] / df['first_egfr_24hr_int']
+
 # derive variable which signals is a patient was transfered from
 # one site to another between a&e and ip
 transfered = df['site_ae']!=df['site_ip']
@@ -68,9 +74,7 @@ LOGGER.info("Finished processing data")
 
 
 # save the processed data
-df.to_csv(clean_data_path, index=False)
-
-LOGGER.info(f"Saved cleaned data to {clean_data_path}")
+save_to_csv(df, clean_data_path, LOGGER)
 
 
 LOGGER.critical("Script finished")
