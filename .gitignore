@@ -1,4 +1,5 @@
 data/*
 logs/*
 models/*
+results/*
 code/utils/__pycache__
