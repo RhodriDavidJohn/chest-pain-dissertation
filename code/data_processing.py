@@ -55,15 +55,46 @@ df['sex'] = df['sex'].fillna('unknown')
 df['smoking'] = df['smoking'].fillna('unknown')
 
 
+# if time in ae, ip, or total is negative
+# replace with null
+df['ae_duration_hrs'] = np.where(df['ae_duration_hrs']<0, np.nan, df['ae_duration_hrs'])
+df['ip_duration_hrs'] = np.where(df['ip_duration_hrs']<0, np.nan, df['ip_duration_hrs'])
+
+total_time_negative = ((df['ae_duration_hrs']<0)|(df['ip_duration_hrs']<0)|(df['total_duration_hrs']<0))
+df['total_duration_hrs'] = np.where(total_time_negative, np.nan, df['total_duration_hrs'])
+
+
+# derive days in ip and total
+# 14 forced to be the max
+days = 14
+hours = 24*days
+bins = [i for i in range(0, hours+25, 24)]
+
+df['ip_duration_days'] = np.where(df['ip_duration_hrs']>hours, hours+1, df['ip_duration_hrs'])
+df['total_duration_days'] = df['ae_duration_hrs'] + df['ip_duration_days']
+df['ip_duration_days'] = pd.cut(df['ip_duration_days'], bins=bins, labels=list(range(days+1)))
+df['total_duration_days'] = pd.cut(df['total_duration_days'], bins=bins, labels=list(range(days+1)))
+
+
 # group large test results
 df['first_tnt_24hr_int'] = [tnt_threshold+1 if x>tnt_threshold else x for x in df['first_tnt_24hr_int']]
 df['max_tnt_24hr_int'] = [tnt_threshold+1 if x>tnt_threshold else x for x in df['max_tnt_24hr_int']]
+
+# replace -1 with nulls
+df['first_tnt_24hr_int'] = np.where(df['first_tnt_24hr_int']==-1, np.nan, df['first_tnt_24hr_int'])
+df['max_tnt_24hr_int'] = np.where(df['max_tnt_24hr_int']==-1, np.nan, df['max_tnt_24hr_int'])
 
 
 # derive variables to capture
 # change in tnt and egfr
 df['tnt_change'] = df['max_tnt_24hr_int'] / df['first_tnt_24hr_int']
 df['egfr_change'] = df['min_egfr_24hr_int'] / df['first_egfr_24hr_int']
+
+
+# derive variable to capture if
+# patients are taking >10 types
+# of medication (primary care)
+df['meds_total_more_than_10'] = np.where(df['meds_total']>10, 1, 0)
 
 # derive variable which signals is a patient was transfered from
 # one site to another between a&e and ip
