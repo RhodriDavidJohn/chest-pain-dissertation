@@ -125,12 +125,9 @@ X_train, y_train = X_train.iloc[mask, :].copy(), y_train[mask].copy()
 
 # save the train-test data for model training and evaluation
 training_data = X_train.join(y_train)
-testing_data = X_test.join(y_test)
 
 train_data_path = train_data_path[:-4] + "_outliers_removed.csv"
-test_data_path = test_data_path[:-4] + "_outliers_removed.csv"
 save_to_csv(training_data, train_data_path, LOGGER)
-save_to_csv(testing_data, test_data_path, LOGGER)
 
 
 # drop nhs_number from X data
