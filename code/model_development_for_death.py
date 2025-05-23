@@ -12,8 +12,9 @@ import time
 import pandas as pd
 
 from sklearn.model_selection import train_test_split
+from sklearn.svm import OneClassSVM
 from sklearn.impute import SimpleImputer
-from sklearn.preprocessing import MinMaxScaler, OneHotEncoder
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 
@@ -24,7 +25,11 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.neural_network import MLPClassifier
 
-from utils.helpers import logger_setup, tune_model, save_model
+from utils.helpers import (logger_setup,
+                           load_csv,
+                           save_to_csv,
+                           tune_model,
+                           save_model)
 
 
 
@@ -63,7 +68,7 @@ seed = int(config.get('global', 'random_seed'))
 # ---------
 LOGGER.info("Loading data...")
 
-df = pd.read_csv(clean_data_path)
+df = load_csv(clean_data_path, LOGGER)
 
 # split data into features and outcome
 X = df.drop(outcome_variable, axis=1).copy()
@@ -83,24 +88,19 @@ X_train, X_test, y_train, y_test = train_test_split(
 training_data = X_train.join(y_train)
 testing_data = X_test.join(y_test)
 
-training_data.to_csv(train_data_path, index=False)
-testing_data.to_csv(test_data_path, index=False)
-
-# drop nhs_number from X data
-X_train = X_train.drop('nhs_number', axis=1).copy()
-X_test = X_test.drop('nhs_number', axis=1).copy()
-
+save_to_csv(training_data, train_data_path, LOGGER)
+save_to_csv(testing_data, test_data_path, LOGGER)
 
 
 # define the pre-processing pipeline
 # ----------------------------------
 
 impute_and_scale = Pipeline([
-    ("numeric_impute", SimpleImputer(strategy="median")),
-    ("numeric_transformation", MinMaxScaler())
+    ("numeric_impute", SimpleImputer(strategy="mean")),
+    ("numeric_transformation", StandardScaler())
 ])
 binary_and_discrete_impute = Pipeline([
-    ("numeric_impute", SimpleImputer(strategy="median"))
+    ("numeric_impute", SimpleImputer(strategy="mean"))
 ])
 impute_and_one_hot_encode = Pipeline([
     ("categorical_impute", SimpleImputer(strategy="most_frequent")),
@@ -112,6 +112,26 @@ preprocessing = ColumnTransformer(transformers=[
     ("binary_and_discrete_preprocessing", binary_and_discrete_impute, binary_and_discrete_features),
     ("categorical_preprocessing", impute_and_one_hot_encode, categorical_features),
 ])
+
+
+# remove outliers from train data
+X_train_transformed = preprocessing.fit_transform(X_train)
+outlier_detector = OneClassSVM(nu=0.01)
+outlier_array = outlier_detector.fit_predict(X_train_transformed)
+mask = outlier_array != -1
+
+X_train, y_train = X_train.iloc[mask, :].copy(), y_train[mask].copy()
+
+# save the train-test data for model training and evaluation
+training_data = X_train.join(y_train)
+
+train_data_path = train_data_path[:-4] + "_outliers_removed.csv"
+save_to_csv(training_data, train_data_path, LOGGER)
+
+
+# drop nhs_number from X data
+X_train = X_train.drop('nhs_number', axis=1).copy()
+X_test = X_test.drop('nhs_number', axis=1).copy()
 
 
 
