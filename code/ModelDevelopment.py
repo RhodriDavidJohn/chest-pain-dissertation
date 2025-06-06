@@ -44,19 +44,22 @@ class ModelDeveloper:
         self.image_filetype = config.get('global', 'image_filetype')
 
     
-    def split_data(self, test_size, train_filename, test_filename):
+    def split_data(self, train_size, validation_size, train_filename, test_filename):
 
-        train_set = int(100*(1-test_size))
-        test_set = int(100*test_size)
+        train_set = int(100*train_size)
+        val_set = int(100*validation_size)
+        test_set = int(100*round(1-(train_size+validation_size), 2))
 
-        msg = f"Splitting data into {train_set}% training set and {test_set}% testing set..."
+        msg = (f"Splitting data into {train_set}% training set, {val_set}% validation "
+               f"set and {test_set}% testing set...")
         self.LOGGER.info(msg)
 
         X_train, X_test, y_train, y_test = train_test_split(
-            self.X, self.y, test_size=test_size, stratify=self.y, random_state=self.seed
+            self.X, self.y, test_size=test_set/100, stratify=self.y, random_state=self.seed
         )
+        val_size = validation_size/(train_size+validation_size)
         X_train, X_val, y_train, y_val = train_test_split(
-            self.X, self.y, test_size=0.25, stratify=self.y, random_state=self.seed
+            self.X, self.y, test_size=val_size, stratify=self.y, random_state=self.seed
         )
 
         self.X_train = X_train
