@@ -206,7 +206,7 @@ class ModelDeveloper:
         tuned_model = self.tune_threshold(trained_model['model'], X, y, "Logistic Regression")
         trained_model['model'] = tuned_model
 
-        trained_model['auc'] = self.get_validation_auc(tuned_model, "Logistic Regression")
+        trained_model['scores'] = self.get_validation_auc(tuned_model, "Logistic Regression")
 
         return trained_model
     
@@ -229,7 +229,7 @@ class ModelDeveloper:
         tuned_model = self.tune_threshold(trained_model['model'], X, y, "Random Forest")
         trained_model['model'] = tuned_model
 
-        trained_model['auc'] = self.get_validation_auc(tuned_model, "Random Forest")
+        trained_model['scores'] = self.get_validation_auc(tuned_model, "Random Forest")
         
         return trained_model
     
@@ -253,7 +253,7 @@ class ModelDeveloper:
         tuned_model = self.tune_threshold(trained_model['model'], X, y, "XGBoost")
         trained_model['model'] = tuned_model
 
-        trained_model['auc'] = self.get_validation_auc(tuned_model, "XGBoost")
+        trained_model['scores'] = self.get_validation_auc(tuned_model, "XGBoost")
         
         return trained_model
     
@@ -276,7 +276,7 @@ class ModelDeveloper:
         tuned_model = self.tune_threshold(trained_model['model'], X, y, "LightGBM")
         trained_model['model'] = tuned_model
 
-        trained_model['auc'] = self.get_validation_auc(tuned_model, "LightGBM")
+        trained_model['scores'] = self.get_validation_auc(tuned_model, "LightGBM")
         
         return trained_model
     
