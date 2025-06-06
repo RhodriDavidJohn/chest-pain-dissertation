@@ -8,28 +8,12 @@
 # imports
 # -------
 import configparser
-import time
-import pandas as pd
+import warnings
 
-from sklearn.model_selection import train_test_split
-from sklearn.svm import OneClassSVM
-from sklearn.impute import SimpleImputer
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.pipeline import Pipeline
-from sklearn.compose import ColumnTransformer
+from ModelDevelopment import ModelDeveloper
+from utils.helpers import logger_setup, load_csv, save_model
 
-from sklearn.linear_model import LogisticRegression
-from sklearn.svm import SVC
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.ensemble import GradientBoostingClassifier
-from sklearn.neural_network import MLPClassifier
-
-from utils.helpers import (logger_setup,
-                           load_csv,
-                           save_to_csv,
-                           tune_model,
-                           save_model)
+warnings.filterwarnings("ignore")
 
 
 
@@ -48,19 +32,18 @@ train_data_path = config.get('data', 'train_data_path')
 test_data_path = config.get('data', 'test_data_path')
 base_model_filename = config.get('model_development', 'base_model_filename')
 best_model_filename = config.get('model_development', 'best_model_filename')
+data_filetype = config.get('global', 'data_filetype')
+model_filetype = config.get('model_development', 'models_filetype')
 
-outcome_variable = config.get('model_development', 'outcome')
+outcome_mi = config.get('model_development', 'outcome_mi')
+outcome_death = config.get('model_development', 'outcome_death')
+outcome_mi_or_death = config.get('model_development', 'outcome_mi_or_death')
 
-categorical_features = (config.get('model_development', 'categorical_features')
-                        .replace('\n', '').replace(' ', '').split(','))
-numeric_features = (config.get('model_development', 'numeric_features')
-                    .replace('\n', '').replace(' ', '').split(','))
-binary_and_discrete_features = (config.get('model_development', 'binary_and_discrete_features')
-                                .replace('\n', '').replace(' ', '').split(','))
+mi_suffix = config.get('global', 'mi_suffix')
+death_suffix = config.get('global', 'death_suffix')
+mi_or_death_suffix = config.get('global', 'mi_or_death_suffix')
 
 test_size = float(config.get('model_development', 'test_size'))
-cv = int(config.get('model_development', 'k_fold_cv'))
-
 seed = int(config.get('global', 'random_seed'))
 
 
@@ -71,205 +54,85 @@ LOGGER.info("Loading data...")
 df = load_csv(clean_data_path, LOGGER)
 
 # split data into features and outcome
-X = df.drop(outcome_variable, axis=1).copy()
-y = df[outcome_variable].copy()
-
-# split data into training and test data
-train_set = int(100*(1-test_size))
-test_set = int(100*test_size)
-
-LOGGER.info(f"Splitting data into {train_set}% training set and {test_set}% testing set...")
-
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=test_size, stratify=y, random_state=seed
-)
-
-# save the train-test data for model training and evaluation
-training_data = X_train.join(y_train)
-testing_data = X_test.join(y_test)
-
-save_to_csv(training_data, train_data_path, LOGGER)
-save_to_csv(testing_data, test_data_path, LOGGER)
+X = df.drop([outcome_mi, outcome_death, outcome_mi_or_death], axis=1).copy()
+y_mi = df[outcome_mi].copy()
+y_death = df[outcome_death].copy()
+y_mi_or_death = df[outcome_mi_or_death].copy()
 
 
+# train models for each outcome
+# -----------------------------
+LOGGER.info("================================")
+LOGGER.info("Fitting models for MI outcome...")
 
-# define the pre-processing pipeline
-# ----------------------------------
+mi_dev = ModelDeveloper(X, y_mi, mi_suffix, config, LOGGER)
 
-impute_and_scale = Pipeline([
-    ("numeric_impute", SimpleImputer(strategy="mean")),
-    ("numeric_transformation", StandardScaler())
-])
-binary_and_discrete_impute = Pipeline([
-    ("numeric_impute", SimpleImputer(strategy="mean"))
-])
-impute_and_one_hot_encode = Pipeline([
-    ("categorical_impute", SimpleImputer(strategy="most_frequent")),
-    ("categorical_transformation", OneHotEncoder(handle_unknown='infrequent_if_exist'))
-])
+mi_train_filename = train_data_path + mi_suffix + data_filetype
+mi_test_filename = test_data_path + mi_suffix + data_filetype
+mi_dev.split_data(test_size, mi_train_filename, mi_test_filename)
 
-preprocessing = ColumnTransformer(transformers=[
-    ("numeric_preprocessing", impute_and_scale, numeric_features),
-    ("binary_and_discrete_preprocessing", binary_and_discrete_impute, binary_and_discrete_features),
-    ("categorical_preprocessing", impute_and_one_hot_encode, categorical_features),
-])
+mi_dev.create_preprocessing_pipeline()
+X_transformed_mi = mi_dev.preprocsessing_pipe.fit_transform(mi_dev.X_train)
+X_train_mi, y_train_mi = mi_dev.remove_outliers(X_transformed_mi)
 
+mi_dev.train_models(X_train_mi, y_train_mi)
 
-# remove outliers from train data
-X_train_transformed = preprocessing.fit_transform(X_train)
-outlier_detector = OneClassSVM(nu=0.01)
-outlier_array = outlier_detector.fit_predict(X_train_transformed)
-mask = outlier_array != -1
+base_model = mi_dev.get_model('Logistic Regression')
+best_model = mi_dev.get_model()
 
-X_train, y_train = X_train.iloc[mask, :].copy(), y_train[mask].copy()
+mi_base_model_path = base_model_filename + mi_suffix + model_filetype
+mi_best_model_path = best_model_filename + mi_suffix + model_filetype
 
-# save the train-test data for model training and evaluation
-training_data = X_train.join(y_train)
-
-train_data_path = train_data_path[:-4] + "_outliers_removed.csv"
-save_to_csv(training_data, train_data_path, LOGGER)
+save_model(base_model, mi_base_model_path, LOGGER)
+save_model(best_model, mi_best_model_path, LOGGER)
 
 
-# drop nhs_number from X data
-X_train = X_train.drop('nhs_number', axis=1).copy()
-X_test = X_test.drop('nhs_number', axis=1).copy()
+LOGGER.info("===================================")
+LOGGER.info("Fitting models for death outcome...")
+
+death_dev = ModelDeveloper(X, y_death, death_suffix, config, LOGGER)
+
+death_train_filename = train_data_path + death_suffix + data_filetype
+death_test_filename = test_data_path + death_suffix + data_filetype
+death_dev.split_data(test_size, death_train_filename, death_test_filename)
+
+death_dev.create_preprocessing_pipeline()
+X_transformed_death = death_dev.preprocsessing_pipe.fit_transform(death_dev.X_train)
+X_train_death, y_train_death = death_dev.remove_outliers(X_transformed_death)
+
+death_dev.train_models(X_train_death, y_train_death)
+
+base_model = death_dev.get_model('Logistic Regression')
+best_model = death_dev.get_model()
+
+death_base_model_path = base_model_filename + death_suffix + model_filetype
+death_best_model_path = best_model_filename + death_suffix + model_filetype
+
+save_model(base_model, death_base_model_path, LOGGER)
+save_model(best_model, death_best_model_path, LOGGER)
 
 
+LOGGER.info("===================================")
+LOGGER.info("Fitting models for MI or death outcome...")
 
+mi_or_death_dev = ModelDeveloper(X, y_mi_or_death, mi_or_death_suffix, config, LOGGER)
 
-# tune the models
-# ---------------
+mi_or_death_train_filename = train_data_path + mi_or_death_suffix + data_filetype
+mi_or_death_test_filename = test_data_path + mi_or_death_suffix + data_filetype
+mi_or_death_dev.split_data(test_size, mi_or_death_train_filename, mi_or_death_test_filename)
 
-starttime = time.time()
+mi_or_death_dev.create_preprocessing_pipeline()
+X_transformed_mi_or_death = mi_or_death_dev.preprocsessing_pipe.fit_transform(mi_or_death_dev.X_train)
+X_train_mi_or_death, y_train_mi_or_death = mi_or_death_dev.remove_outliers(X_transformed_mi_or_death)
 
-# base model
-# ----------
-# logistic regression
-LOGGER.info("====================================")
-LOGGER.info("Tuning logistic regression model...")
+mi_or_death_dev.train_models(X_train_mi_or_death, y_train_mi_or_death)
 
-model = LogisticRegression(random_state=seed)
-model_name = "lreg_model"
-lreg_params = {
-    f"{model_name}__solver": ['saga', 'liblinear'],
-    f"{model_name}__penalty": [None, 'l1', 'l2'],
-    f"{model_name}__C": [0.01, 0.1, 1, 10, 100],
-    f"{model_name}__max_iter": [750, 1000, 1250, 1500]
-}
-lr = tune_model(X_train, y_train, model, model_name, preprocessing, lreg_params, cv, LOGGER)
+base_model = mi_or_death_dev.get_model('Logistic Regression')
+best_model = mi_or_death_dev.get_model()
 
+mi_or_death_base_model_path = base_model_filename + mi_or_death_suffix + model_filetype
+mi_or_death_best_model_path = best_model_filename + mi_or_death_suffix + model_filetype
 
-# svm
-LOGGER.info("Tuning SVM model...")
-model = SVC(class_weight='balanced', random_state=seed)
-model_name = "svm_model"
-svm_params = {
-    f"{model_name}__kernel": ['linear', 'rbf'],
-    f"{model_name}__C": [0.001, 0.01, 0.1, 1, 10]
-}
-svm = tune_model(X_train, y_train, model, model_name, preprocessing, svm_params, cv, LOGGER)
+save_model(base_model, mi_or_death_base_model_path, LOGGER)
+save_model(best_model, mi_or_death_best_model_path, LOGGER)
 
-
-# more complex models
-# -------------------
-# k nearest neighbours
-LOGGER.info("Tuning KNN model...")
-model = KNeighborsClassifier()
-model_name = "knn_model"
-knn_params = {
-    f"{model_name}__n_neighbors": range(5, 405, 50),
-    f"{model_name}__weights": ['uniform', 'distance']
-}
-knn = tune_model(X_train, y_train, model, model_name, preprocessing, knn_params, cv, LOGGER)
-
-# random forest
-LOGGER.info("Tuning random forest model...")
-model = RandomForestClassifier(criterion="gini", max_features="sqrt", random_state=seed)
-model_name = "rfc_model"
-rfc_params = {
-    f"{model_name}__n_estimators": [100, 200, 300, 400],
-    f"{model_name}__max_depth": range(5, 15, 2),
-    f"{model_name}__min_samples_split": range(16, 25, 2)
-}
-rfc = tune_model(X_train, y_train, model, model_name, preprocessing, rfc_params, cv, LOGGER)
-
-# xgboost
-LOGGER.info("Tuning XGBoost model...")
-model = GradientBoostingClassifier(random_state=seed)
-model_name = "xgb_model"
-xgb_params = {
-    f"{model_name}__n_estimators": [500, 750, 1000],
-    f"{model_name}__learning_rate": [0.001, 0.01, 0.1],
-    f"{model_name}__max_depth": [2, 3, 4],
-    f"{model_name}__min_samples_split": [2, 5, 10]
-}
-xgb = tune_model(X_train, y_train, model, model_name, preprocessing, xgb_params, cv, LOGGER)
-
-# mlp
-LOGGER.info("Tuning MLP model...")
-model = MLPClassifier(solver='adam', random_state=seed)
-model_name = "mlp_model"
-mlp_params = {
-    f"{model_name}__hidden_layer_sizes": [(25,), (50,), (100,)],
-    f"{model_name}__activation": ['identity', 'logistic', 'tanh', 'relu'],
-    f"{model_name}__alpha": [0.0001, 0.001, 0.01, 0.1],
-    f"{model_name}__batch_size": [32, 64, 128],
-    f"{model_name}__max_iter": [1000, 1500, 2000]
-}
-mlp = tune_model(X_train, y_train, model, model_name, preprocessing, mlp_params, cv, LOGGER)
-
-
-endtime = time.time()
-hours, rem = divmod(endtime-starttime, 3600)
-mins, secs = divmod(rem, 60)
-
-LOGGER.info(f"Tuning the models took {round(hours)}h {round(mins)}m {round(secs)}s")
-
-
-
-# compare the models
-# ------------------
-models = [lr, svm, rfc, knn, xgb, mlp]
-model_comparison_df = pd.DataFrame({
-    'model_name': ['logistic_regression', 'svm', 'random_forest', 'knn', 'xgboost', 'mlp'],
-    'model': [model['model'] for model in models],
-    'hyperparameters': [model['params'] for model in models],
-    'AUC': [model['scores'] for model in models]
-})
-
-
-base_model = lr['model']
-base_auc = round(lr['scores'], 3)
-print("The best base model (logistic regression)",
-      f"has an AUC of {base_auc}.")
-
-best_model_df = (
-    model_comparison_df.iloc[1:, :]
-    .sort_values(by='AUC', ascending=False)
-    .reset_index(drop=True)
-)
-
-LOGGER.info("Non base-model cross validation rankings:")
-LOGGER.info(f"\n{best_model_df.drop('model', axis=1)}")
-
-best_model_name = best_model_df.loc[0, 'model_name']
-best_model_score = round(best_model_df.loc[0, 'AUC'], 2)
-
-msg = (f"The best model is {best_model_name.replace('_', ' ')} "
-       f"and it has an AUC of {best_model_score}.")
-LOGGER.info(msg)
-
-best_model = best_model_df.loc[0, 'model']
-
-
-# save models
-# -----------
-LOGGER.info("Saving models...")
-
-save_model(base_model, base_model_filename, LOGGER)
-save_model(best_model, best_model_filename, LOGGER)
-
-
-
-LOGGER.critical("Script finished successfully")
- 
