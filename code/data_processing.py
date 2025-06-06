@@ -47,12 +47,16 @@ df[comorbidities] = df[comorbidities].fillna(0)
 for col in df.columns:
     if df[col].dtype=='object':
         df[col] = df[col].str.lower()
+        df[col] = df[col].str.replace(' ', '_')
 
 # group category values for sex and smoking
-df['sex'] = df['sex'].replace('not specified', 'unknown')
+df['sex'] = df['sex'].replace('not_specified', 'unknown')
 df['sex'] = df['sex'].fillna('unknown')
 
 df['smoking'] = df['smoking'].fillna('unknown')
+
+# fill null values in diagnosis description with 'other'
+df['diagnosis_description'] = df['diagnosis_description'].fillna('other')
 
 
 # if time in ae, ip, or total is negative
@@ -91,6 +95,11 @@ df['tnt_change'] = df['max_tnt_24hr_int'] / df['first_tnt_24hr_int']
 df['egfr_change'] = df['min_egfr_24hr_int'] / df['first_egfr_24hr_int']
 
 
+# derive variable to capture relationship
+# between tnt and egfr
+df['tnt_egfr_interaction'] = df['max_tnt_24hr_int'] / df['min_egfr_24hr_int']
+
+
 # derive variable to capture if
 # patients are taking >10 types
 # of medication (primary care)
@@ -101,10 +110,34 @@ df['meds_total_more_than_10'] = np.where(df['meds_total']>10, 1, 0)
 transfered = df['site_ae']!=df['site_ip']
 df['transfered_dv'] = np.where(transfered, 1, 0)
 
+
+# derive departure month and season
+df['departure_month'] = pd.to_datetime(df['departure_date']).dt.month
+df['departure_season'] = ['spring' if month in [3,4,5] else
+                        'summer' if month in [6,7,8] else
+                        'autumn' if month in [9,10,11] else
+                        'winter' for month in df['departure_month']]
+
+df = df.drop('departure_date', axis=1).copy()
+
+
+# make chd diagnosis code not include mi
+df['chd_diagnosis_code'] = np.where(df['mi_diagnosis_code']==1, 0, df['chd_diagnosis_code'])
+
+
+# derive the mi or death outcome variable
+positive_condition = (
+    (df['subsequent_mi_30days_diagnosis']==1) |
+    (df['death_precise']==1)
+)
+df['mi_or_death_30days'] = np.where(positive_condition, 1, 0)
+
+
 LOGGER.info("Finished processing data")
 
 
 # save the processed data
+LOGGER.info("Saving the processed data")
 save_to_csv(df, clean_data_path, LOGGER)
 
 
