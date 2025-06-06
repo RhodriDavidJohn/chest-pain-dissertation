@@ -2,4 +2,7 @@ data/*
 logs/*
 models/*
 results/*
+code/__pycache__
 code/utils/__pycache__
+code/.ipynb_checkpoints
+code/utils/.ipynb_checkpoints
