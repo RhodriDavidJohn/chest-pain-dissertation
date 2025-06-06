@@ -43,7 +43,8 @@ mi_suffix = config.get('global', 'mi_suffix')
 death_suffix = config.get('global', 'death_suffix')
 mi_or_death_suffix = config.get('global', 'mi_or_death_suffix')
 
-test_size = float(config.get('model_development', 'test_size'))
+train_size = float(config.get('model_development', 'train_size'))
+validation_size = float(config.get('model_development', 'validation_size'))
 seed = int(config.get('global', 'random_seed'))
 
 
@@ -69,7 +70,7 @@ mi_dev = ModelDeveloper(X, y_mi, mi_suffix, config, LOGGER)
 
 mi_train_filename = train_data_path + mi_suffix + data_filetype
 mi_test_filename = test_data_path + mi_suffix + data_filetype
-mi_dev.split_data(test_size, mi_train_filename, mi_test_filename)
+mi_dev.split_data(train_size, validation_size, mi_train_filename, mi_test_filename)
 
 mi_dev.create_preprocessing_pipeline()
 X_transformed_mi = mi_dev.preprocsessing_pipe.fit_transform(mi_dev.X_train)
@@ -94,7 +95,7 @@ death_dev = ModelDeveloper(X, y_death, death_suffix, config, LOGGER)
 
 death_train_filename = train_data_path + death_suffix + data_filetype
 death_test_filename = test_data_path + death_suffix + data_filetype
-death_dev.split_data(test_size, death_train_filename, death_test_filename)
+death_dev.split_data(train_size, validation_size, death_train_filename, death_test_filename)
 
 death_dev.create_preprocessing_pipeline()
 X_transformed_death = death_dev.preprocsessing_pipe.fit_transform(death_dev.X_train)
@@ -119,7 +120,7 @@ mi_or_death_dev = ModelDeveloper(X, y_mi_or_death, mi_or_death_suffix, config, L
 
 mi_or_death_train_filename = train_data_path + mi_or_death_suffix + data_filetype
 mi_or_death_test_filename = test_data_path + mi_or_death_suffix + data_filetype
-mi_or_death_dev.split_data(test_size, mi_or_death_train_filename, mi_or_death_test_filename)
+mi_or_death_dev.split_data(train_size, validation_size, mi_or_death_train_filename, mi_or_death_test_filename)
 
 mi_or_death_dev.create_preprocessing_pipeline()
 X_transformed_mi_or_death = mi_or_death_dev.preprocsessing_pipe.fit_transform(mi_or_death_dev.X_train)
