@@ -8,6 +8,7 @@
 # imports
 # -------
 import configparser
+import time
 import warnings
 
 from ModelDevelopment import ModelDeveloper
@@ -63,6 +64,8 @@ y_mi_or_death = df[outcome_mi_or_death].copy()
 
 # train models for each outcome
 # -----------------------------
+starttime = time.time()
+
 LOGGER.info("================================")
 LOGGER.info("Fitting models for MI outcome...")
 
@@ -137,3 +140,13 @@ mi_or_death_best_model_path = best_model_filename + mi_or_death_suffix + model_f
 save_model(base_model, mi_or_death_base_model_path, LOGGER)
 save_model(best_model, mi_or_death_best_model_path, LOGGER)
 
+
+
+endtime = time.time()
+hours, rem = divmod(endtime-starttime, 3600)
+mins, secs = divmod(rem, 60)
+
+
+LOGGER.info(f"Tuning the models for all outcomes took {round(hours)}h {round(mins)}m {round(secs)}s")
+
+LOGGER.critical("Model development script finished successfully")
