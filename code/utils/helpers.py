@@ -130,7 +130,6 @@ def tune_model(X_train,
     msg = (f"Tuning and training the {model_name} model "
            f"took {round(hours)}h {round(mins)}m {round(secs)}s")
     LOGGER.info(msg)
-    LOGGER.info("====================================")
 
     return result
 
