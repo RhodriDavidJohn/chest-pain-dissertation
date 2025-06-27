@@ -30,11 +30,16 @@ config.read('config.ini')
 
 clean_data_path = config.get('data', 'clean_data_path')
 train_data_path = config.get('data', 'train_data_path')
+val_data_path = config.get('data', 'validation_data_path')
 test_data_path = config.get('data', 'test_data_path')
 base_model_filename = config.get('model_development', 'base_model_filename')
 best_model_filename = config.get('model_development', 'best_model_filename')
 data_filetype = config.get('global', 'data_filetype')
 model_filetype = config.get('model_development', 'models_filetype')
+
+full = config.get('global', 'full_data')
+nbt = config.get('global', 'nbt_data')
+uhbw = config.get('global', 'uhbw_data')
 
 outcome_mi = config.get('model_development', 'outcome_mi')
 outcome_death = config.get('model_development', 'outcome_death')
@@ -56,10 +61,8 @@ LOGGER.info("Loading data...")
 df = load_csv(clean_data_path, LOGGER)
 
 # split data into features and outcome
-X = df.drop([outcome_mi, outcome_death, outcome_mi_or_death], axis=1).copy()
-y_mi = df[outcome_mi].copy()
-y_death = df[outcome_death].copy()
-y_mi_or_death = df[outcome_mi_or_death].copy()
+X_full = df.drop([outcome_mi, outcome_death, outcome_mi_or_death], axis=1).copy()
+y_full = df[outcome_mi].copy()
 
 
 # train models for each outcome
@@ -67,78 +70,91 @@ y_mi_or_death = df[outcome_mi_or_death].copy()
 starttime = time.time()
 
 LOGGER.info("================================")
-LOGGER.info("Fitting models for MI outcome...")
+LOGGER.info("Fitting models on the full data...")
 
-mi_dev = ModelDeveloper(X, y_mi, mi_suffix, config, LOGGER)
+full_dev = ModelDeveloper(X_full, y_full, full, config, LOGGER)
 
-mi_train_filename = train_data_path + mi_suffix + data_filetype
-mi_test_filename = test_data_path + mi_suffix + data_filetype
-mi_dev.split_data(train_size, validation_size, mi_train_filename, mi_test_filename)
+full_train_filename = train_data_path + full + data_filetype
+full_val_filename = val_data_path + full + data_filetype
+full_test_filename = test_data_path + full + data_filetype
+full_dev.split_data(train_size, validation_size, full_train_filename, full_val_filename, full_test_filename)
 
-mi_dev.create_preprocessing_pipeline()
-X_transformed_mi = mi_dev.preprocsessing_pipe.fit_transform(mi_dev.X_train)
-X_train_mi, y_train_mi = mi_dev.remove_outliers(X_transformed_mi)
+full_dev.create_preprocessing_pipeline()
+X_transformed_full = full_dev.preprocsessing_pipe.fit_transform(full_dev.X_train)
+X_train_mi, y_train_mi = full_dev.remove_outliers(X_transformed_full)
 
-mi_dev.train_models(X_train_mi, y_train_mi)
+full_dev.train_models(X_train_mi, y_train_mi)
 
-base_model = mi_dev.get_model('Logistic Regression')
-best_model = mi_dev.get_model()
+base_model = full_dev.get_model('Logistic Regression')
+best_model = full_dev.get_model()
 
-mi_base_model_path = base_model_filename + mi_suffix + model_filetype
-mi_best_model_path = best_model_filename + mi_suffix + model_filetype
+full_base_model_path = base_model_filename + full + model_filetype
+full_best_model_path = best_model_filename + full + model_filetype
 
-save_model(base_model, mi_base_model_path, LOGGER)
-save_model(best_model, mi_best_model_path, LOGGER)
-
-
-LOGGER.info("===================================")
-LOGGER.info("Fitting models for death outcome...")
-
-death_dev = ModelDeveloper(X, y_death, death_suffix, config, LOGGER)
-
-death_train_filename = train_data_path + death_suffix + data_filetype
-death_test_filename = test_data_path + death_suffix + data_filetype
-death_dev.split_data(train_size, validation_size, death_train_filename, death_test_filename)
-
-death_dev.create_preprocessing_pipeline()
-X_transformed_death = death_dev.preprocsessing_pipe.fit_transform(death_dev.X_train)
-X_train_death, y_train_death = death_dev.remove_outliers(X_transformed_death)
-
-death_dev.train_models(X_train_death, y_train_death)
-
-base_model = death_dev.get_model('Logistic Regression')
-best_model = death_dev.get_model()
-
-death_base_model_path = base_model_filename + death_suffix + model_filetype
-death_best_model_path = best_model_filename + death_suffix + model_filetype
-
-save_model(base_model, death_base_model_path, LOGGER)
-save_model(best_model, death_best_model_path, LOGGER)
+save_model(base_model, full_base_model_path, LOGGER)
+save_model(best_model, full_best_model_path, LOGGER)
 
 
 LOGGER.info("===================================")
-LOGGER.info("Fitting models for MI or death outcome...")
+LOGGER.info("Fitting models on the NBT data...")
 
-mi_or_death_dev = ModelDeveloper(X, y_mi_or_death, mi_or_death_suffix, config, LOGGER)
+X_nbt = (df[df['site_ip']=='nbt']
+         .drop(['site_ip', outcome_mi, outcome_death, outcome_mi_or_death], axis=1)
+         .copy())
+y_nbt = df.loc[df['site_ip']=='nbt', outcome_mi].copy()
 
-mi_or_death_train_filename = train_data_path + mi_or_death_suffix + data_filetype
-mi_or_death_test_filename = test_data_path + mi_or_death_suffix + data_filetype
-mi_or_death_dev.split_data(train_size, validation_size, mi_or_death_train_filename, mi_or_death_test_filename)
+nbt_dev = ModelDeveloper(X_nbt, y_nbt, nbt, config, LOGGER)
 
-mi_or_death_dev.create_preprocessing_pipeline()
-X_transformed_mi_or_death = mi_or_death_dev.preprocsessing_pipe.fit_transform(mi_or_death_dev.X_train)
-X_train_mi_or_death, y_train_mi_or_death = mi_or_death_dev.remove_outliers(X_transformed_mi_or_death)
+nbt_train_filename = train_data_path + nbt + data_filetype
+nbt_val_filename = val_data_path + nbt + data_filetype
+nbt_test_filename = test_data_path + nbt + data_filetype
+nbt_dev.split_data(train_size, validation_size, nbt_train_filename, nbt_val_filename, nbt_test_filename)
 
-mi_or_death_dev.train_models(X_train_mi_or_death, y_train_mi_or_death)
+nbt_dev.create_preprocessing_pipeline(['site_ip'])
+X_transformed_nbt = nbt_dev.preprocsessing_pipe.fit_transform(nbt_dev.X_train)
+X_train_nbt, y_train_nbt = nbt_dev.remove_outliers(X_transformed_nbt)
 
-base_model = mi_or_death_dev.get_model('Logistic Regression')
-best_model = mi_or_death_dev.get_model()
+nbt_dev.train_models(X_train_nbt, y_train_nbt)
 
-mi_or_death_base_model_path = base_model_filename + mi_or_death_suffix + model_filetype
-mi_or_death_best_model_path = best_model_filename + mi_or_death_suffix + model_filetype
+base_model = nbt_dev.get_model('Logistic Regression')
+best_model = nbt_dev.get_model()
 
-save_model(base_model, mi_or_death_base_model_path, LOGGER)
-save_model(best_model, mi_or_death_best_model_path, LOGGER)
+nbt_base_model_path = base_model_filename + nbt + model_filetype
+nbt_best_model_path = best_model_filename + nbt + model_filetype
+
+save_model(base_model, nbt_base_model_path, LOGGER)
+save_model(best_model, nbt_best_model_path, LOGGER)
+
+
+LOGGER.info("===================================")
+LOGGER.info("Fitting models on the UHBW data...")
+
+X_uhbw = (df[df['site_ip']=='uhbw']
+         .drop(['site_ip', outcome_mi, outcome_death, outcome_mi_or_death], axis=1)
+         .copy())
+y_uhbw = df.loc[df['site_ip']=='uhbw', outcome_mi].copy()
+
+uhbw_dev = ModelDeveloper(X_uhbw, y_uhbw, uhbw, config, LOGGER)
+
+uhbw_train_filename = train_data_path + uhbw + data_filetype
+uhbw_val_filename = val_data_path + uhbw + data_filetype
+uhbw_test_filename = test_data_path + uhbw + data_filetype
+uhbw_dev.split_data(train_size, validation_size, uhbw_train_filename, uhbw_val_filename, uhbw_test_filename)
+
+uhbw_dev.create_preprocessing_pipeline(['site_ip'])
+X_transformed_uhbw = uhbw_dev.preprocsessing_pipe.fit_transform(uhbw_dev.X_train)
+X_train_uhbw, y_train_uhbw = uhbw_dev.remove_outliers(X_transformed_uhbw)
+
+uhbw_dev.train_models(X_train_uhbw, y_train_uhbw)
+
+base_model = uhbw_dev.get_model('Logistic Regression')
+best_model = uhbw_dev.get_model()
+
+uhbw_base_model_path = base_model_filename + uhbw + model_filetype
+uhbw_best_model_path = best_model_filename + uhbw + model_filetype
+
+save_model(base_model, uhbw_base_model_path, LOGGER)
+save_model(best_model, uhbw_best_model_path, LOGGER)
 
 
 
