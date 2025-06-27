@@ -2,7 +2,11 @@ data/*
 logs/*
 models/*
 results/*
+code/class_imbalance_analysis
+code/different_outcome_analysis
+code/exploratory_analysis.ipynb
+code/testing_imbalaned_class_techniques.ipynb
 code/__pycache__
-code/utils/__pycache__
 code/.ipynb_checkpoints
+code/utils/__pycache__
 code/utils/.ipynb_checkpoints
