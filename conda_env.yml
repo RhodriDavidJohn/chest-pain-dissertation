@@ -12,3 +12,4 @@ dependencies:
   - lightgbm=4.6.0
   - matplotlib=3.10.0
   - shap=0.47.2
+  - imbalanced-learn=0.13.0
