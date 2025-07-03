@@ -75,7 +75,8 @@ full_dev.split_data(train_size, validation_size, full_train_filename, full_val_f
 
 full_dev.create_preprocessing_pipeline()
 X_transformed_full = full_dev.preprocsessing_pipe.fit_transform(full_dev.X_train)
-X_train_mi, y_train_mi = full_dev.remove_outliers(X_transformed_full)
+full_outliers_removed_path = full_train_filename[:-4] + '_outliers_removed' + data_filetype
+X_train_mi, y_train_mi = full_dev.remove_outliers(X_transformed_full, full_outliers_removed_path)
 
 full_dev.train_models(X_train_mi, y_train_mi)
 
@@ -106,7 +107,8 @@ nbt_dev.split_data(train_size, validation_size, nbt_train_filename, nbt_val_file
 
 nbt_dev.create_preprocessing_pipeline(['site_ip'])
 X_transformed_nbt = nbt_dev.preprocsessing_pipe.fit_transform(nbt_dev.X_train)
-X_train_nbt, y_train_nbt = nbt_dev.remove_outliers(X_transformed_nbt)
+nbt_outliers_removed_path = nbt_train_filename[:-4] + '_outliers_removed' + data_filetype
+X_train_nbt, y_train_nbt = nbt_dev.remove_outliers(X_transformed_nbt, nbt_outliers_removed_path)
 
 nbt_dev.train_models(X_train_nbt, y_train_nbt)
 
@@ -137,7 +139,8 @@ uhbw_dev.split_data(train_size, validation_size, uhbw_train_filename, uhbw_val_f
 
 uhbw_dev.create_preprocessing_pipeline(['site_ip'])
 X_transformed_uhbw = uhbw_dev.preprocsessing_pipe.fit_transform(uhbw_dev.X_train)
-X_train_uhbw, y_train_uhbw = uhbw_dev.remove_outliers(X_transformed_uhbw)
+uhbw_outliers_removed_path = uhbw_train_filename[:-4] + '_outliers_removed' + data_filetype
+X_train_uhbw, y_train_uhbw = uhbw_dev.remove_outliers(X_transformed_uhbw, uhbw_outliers_removed_path)
 
 uhbw_dev.train_models(X_train_uhbw, y_train_uhbw)
 
