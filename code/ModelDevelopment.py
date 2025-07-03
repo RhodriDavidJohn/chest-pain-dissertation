@@ -107,6 +107,9 @@ class ModelDeveloper:
 
         starttime = time.time()
 
+        for col in self.disc_cols:
+            X[col] = X[col].astype('category')
+
         lreg_model = self.train_logistic_regression(X, y)
         rfc_model = self.train_random_forest(X, y)
         xgb_model = self.train_xgboost(X, y)
@@ -194,6 +197,14 @@ class ModelDeveloper:
                     self.LOGGER.error(f"Feature {feature} is not valid.")
                     raise(ValueError((f"Feature {feature} is not valid. "
                                       f"Feature must be in {self.X_train.columns.values.tolist()}")))
+        
+        invalid_features = list(
+            set(self.num_cols+self.disc_cols+self.cat_cols) - set(self.X_train.columns.values.tolist())
+        )
+        if len(invalid_features) != 0:
+            msg = f"The following features are not in the dataframe: {invalid_features}"
+            self.LOGGER.error(msg)
+            raise ValueError(msg)
 
         impute_and_scale = Pipeline([
             ("numeric_impute", SimpleImputer(strategy="mean")),
@@ -517,7 +528,7 @@ class ModelDeveloper:
 
         ax2.plot(df['Model'], df['F1 Score'], color='red', linestyle='--', marker='o', label=f'F1 Score')
         
-        ax2.set_ylabel('AUC')
+        ax2.set_ylabel('F1 Score')
 
         lines, labels = ax1.get_legend_handles_labels()
         lines2, labels2 = ax2.get_legend_handles_labels()
