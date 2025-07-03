@@ -49,6 +49,8 @@ def evaluate_models(suffix, d_type):
 
     base_eval = ModelEvaluator(base_model, suffix, config, LOGGER)
     base_eval.load_data()
+    base_eval.predict_outcomes()
+    base_eval.predict_probabilitess()
     base_metrics = base_eval.get_ml_metrics()
     base_eval.plot_roc_pr_curve()
     base_eval.plot_coefs()
@@ -61,6 +63,8 @@ def evaluate_models(suffix, d_type):
 
     best_eval = ModelEvaluator(best_model, suffix, config, LOGGER)
     best_eval.load_data()
+    best_eval.predict_outcomes()
+    best_eval.predict_probabilitess()
     best_metrics = best_eval.get_ml_metrics()
     best_eval.plot_roc_pr_curve()
     best_eval.plot_shap()
