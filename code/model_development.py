@@ -42,12 +42,6 @@ nbt = config.get('global', 'nbt_data')
 uhbw = config.get('global', 'uhbw_data')
 
 outcome_mi = config.get('model_development', 'outcome_mi')
-outcome_death = config.get('model_development', 'outcome_death')
-outcome_mi_or_death = config.get('model_development', 'outcome_mi_or_death')
-
-mi_suffix = config.get('global', 'mi_suffix')
-death_suffix = config.get('global', 'death_suffix')
-mi_or_death_suffix = config.get('global', 'mi_or_death_suffix')
 
 train_size = float(config.get('model_development', 'train_size'))
 validation_size = float(config.get('model_development', 'validation_size'))
@@ -61,7 +55,7 @@ LOGGER.info("Loading data...")
 df = load_csv(clean_data_path, LOGGER)
 
 # split data into features and outcome
-X_full = df.drop([outcome_mi, outcome_death, outcome_mi_or_death], axis=1).copy()
+X_full = df.drop([outcome_mi], axis=1).copy()
 y_full = df[outcome_mi].copy()
 
 
@@ -99,7 +93,7 @@ LOGGER.info("===================================")
 LOGGER.info("Fitting models on the NBT data...")
 
 X_nbt = (df[df['site_ip']=='nbt']
-         .drop(['site_ip', outcome_mi, outcome_death, outcome_mi_or_death], axis=1)
+         .drop(['site_ip', outcome_mi], axis=1)
          .copy())
 y_nbt = df.loc[df['site_ip']=='nbt', outcome_mi].copy()
 
@@ -130,7 +124,7 @@ LOGGER.info("===================================")
 LOGGER.info("Fitting models on the UHBW data...")
 
 X_uhbw = (df[df['site_ip']=='uhbw']
-         .drop(['site_ip', outcome_mi, outcome_death, outcome_mi_or_death], axis=1)
+         .drop(['site_ip', outcome_mi], axis=1)
          .copy())
 y_uhbw = df.loc[df['site_ip']=='uhbw', outcome_mi].copy()
 
@@ -163,6 +157,6 @@ hours, rem = divmod(endtime-starttime, 3600)
 mins, secs = divmod(rem, 60)
 
 
-LOGGER.info(f"Tuning the models for all outcomes took {round(hours)}h {round(mins)}m {round(secs)}s")
+LOGGER.info(f"Tuning the models for all data subsets took {round(hours)}h {round(mins)}m {round(secs)}s")
 
 LOGGER.critical("Model development script finished successfully")
