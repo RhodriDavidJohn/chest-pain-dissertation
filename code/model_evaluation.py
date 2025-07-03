@@ -54,6 +54,7 @@ def evaluate_models(suffix, d_type):
     base_metrics = base_eval.get_ml_metrics()
     base_eval.plot_roc_pr_curve()
     base_eval.plot_coefs()
+    base_eval.plot_shap()
     base_eval.plot_calibration_curve()
 
     LOGGER.info(f"Evaluating the best tree based model for the {d_type} data")

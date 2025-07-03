@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import shap
 
+import shap.maskers
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import(roc_auc_score,
                             f1_score,
@@ -17,7 +18,8 @@ from sklearn.metrics import(roc_auc_score,
                             precision_recall_curve,
                             auc,
                             brier_score_loss,
-                            confusion_matrix)
+                            confusion_matrix,
+                            ConfusionMatrixDisplay)
 from sklearn.calibration import calibration_curve
 
 from utils.helpers import get_model_name, get_model_features, map_model_name
@@ -41,32 +43,40 @@ class ModelEvaluator:
         if self.d_type!='full':
             self.d_type = self.d_type.upper()
 
+        self.disc_cols = (config.get('model_development', 'binary_and_discrete_features')
+                          .replace('\n', '').replace(' ', '').split(','))
         self.bins = int(config.get('evaluation', 'n_bins_calibration'))
         self.auc_plot_base_path = config.get('evaluation', 'roc_pr_auc_path')
         self.calibration_plot_base_path = config.get('evaluation', 'callibration_path')
         self.feature_plot_base_path = config.get('evaluation', 'feature_importance_path')
+        self.confusion_matrix_base_path = config.get('evaluation', 'confusion_matrix_path')
         self.image_filetype = config.get('global', 'image_filetype')
         self.data_filetype = config.get('global', 'data_filetype')
+        base_train_data_path = config.get('data', 'train_data_path')
         base_test_data_path = config.get('data', 'test_data_path')
         base_val_data_path = config.get('data', 'validation_data_path')
+        self.train_data_path = base_train_data_path + self.suffix + '_outliers_removed' + self.data_filetype
         self.test_data_path = base_test_data_path + self.suffix + self.data_filetype
         self.validation_data_path = base_val_data_path + self.suffix + self.data_filetype
 
 
     def load_data(self):
-        
+
         try:
-            test_data = pd.read_csv(self.test_data_path)
-            test_data = test_data.drop('nhs_number', axis=1).copy()
+            train_data = pd.read_csv(self.train_data_path)
         except Exception as e:
-            self.LOGGER.error("Error loading the validation data: {e}")
+            self.LOGGER.error("Error loading the train data: {e}")
             raise(e)
         
-        columns = test_data.columns.tolist()
-        self.X = test_data[columns[:-1]].copy()
-        self.y = test_data[columns[-1]].copy()
+        columns = train_data.columns.tolist()
+        self.X_train = train_data[columns[:-1]].copy()
+        self.y_train = train_data[columns[-1]].copy()
 
-        self.LOGGER.info(f"Successfully loaded test data: {self.test_data_path}")
+        for col in self.disc_cols:
+            if col in self.X_train.columns:
+                self.X_train[col] = self.X_train[col].astype('category')
+
+        self.LOGGER.info(f"Successfully loaded train data: {self.train_data_path}")
 
         try:
             validation_data = pd.read_csv(self.validation_data_path)
@@ -79,36 +89,57 @@ class ModelEvaluator:
         self.X_val = validation_data[columns[:-1]].copy()
         self.y_val = validation_data[columns[-1]].copy()
 
+        for col in self.disc_cols:
+            if col in self.X_val.columns:
+                self.X_val[col] = self.X_val[col].astype('category')
+
+        self.LOGGER.info(f"Successfully loaded validation data: {self.validation_data_path}")
+        
+        try:
+            test_data = pd.read_csv(self.test_data_path)
+            test_data = test_data.drop('nhs_number', axis=1).copy()
+        except Exception as e:
+            self.LOGGER.error("Error loading the validation data: {e}")
+            raise(e)
+        
+        columns = test_data.columns.tolist()
+        self.X = test_data[columns[:-1]].copy()
+        self.y = test_data[columns[-1]].copy()
+
+        for col in self.disc_cols:
+            if col in self.X.columns:
+                self.X[col] = self.X[col].astype('category')
+
+        self.LOGGER.info(f"Successfully loaded test data: {self.test_data_path}")
+
         return None
 
     
-    def predict_outcomes(self):
+    def predict_outcomes(self, return_predictions=False):
         self.y_pred = self.pipe.predict(self.X)
-        return self.y_pred
+        if return_predictions:
+            return self.y_pred
 
     
-    def predict_probabilitess(self):
+    def predict_probabilitess(self, return_predictions=False):
         self.y_prob = self.pipe.predict_proba(self.X)[:, 1]
-        return self.y_prob
+        if return_predictions:
+            return self.y_prob
     
 
     def get_ml_metrics(self) -> pd.DataFrame:
     
-        # get model predictions
-        y_pred = self.predict_outcomes()
-        y_pred_proba = self.predict_probabilitess()
-
         # calculate metrics
-        accuracy = balanced_accuracy_score(self.y, y_pred)
-        b_score = brier_score_loss(self.y, y_pred_proba)
-        precision_value = precision_score(self.y, y_pred)
-        recall_value = recall_score(self.y, y_pred)
-        f1 = f1_score(self.y, y_pred)
-        tn, fp, fn, tp = confusion_matrix(self.y, y_pred).ravel()
+        accuracy = balanced_accuracy_score(self.y, self.y_pred)
+        b_score = brier_score_loss(self.y, self.y_prob)
+        precision_value = precision_score(self.y, self.y_pred)
+        recall_value = recall_score(self.y, self.y_pred)
+        f1 = f1_score(self.y, self.y_pred)
+        tn, fp, fn, tp = confusion_matrix(self.y, self.y_pred).ravel()
         specificity = tn/(tn+fp)
-        roc_auc = roc_auc_score(self.y, y_pred_proba)
+        roc_auc = roc_auc_score(self.y, self.y_prob)
 
-        precision, recall, _ = precision_recall_curve(self.y, y_pred_proba)
+        precision, recall, _ = precision_recall_curve(self.y, self.y_prob)
         pr_auc = auc(recall, precision)
 
 
@@ -202,12 +233,47 @@ class ModelEvaluator:
         return None
     
 
+    def plot_confusion_matrix(self):
+
+        save_loc = (self.confusion_matrix_base_path +
+                    '_'+self.model_name.lower().replace(' ', '_') +
+                    self.suffix +
+                    self.image_filetype)
+        
+        os.makedirs(os.path.dirname(save_loc), exist_ok=True)
+
+        labels = ['Not re-admitted with MI', 'Re-admitted with MI']
+        cm = confusion_matrix(
+            y_true=self.y,
+            y_pred=self.y_pred
+        )
+
+        cm_disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=labels)
+
+        title = (f"Confusion Matrix for the {self.model_name} model "
+                 f"trained on the {self.d_type} data")
+
+        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(10, 6))
+        cm_disp.plot(ax=ax)
+        fig.suptitle(title)
+
+        # save the plot
+        plt.tight_layout()
+        plt.savefig(save_loc)
+        plt.close()
+
+        msg = (f"{self.model_name} confusion matrix "
+               f"plot saved to {save_loc}")
+        self.LOGGER.info(msg)
+    
+
     def plot_coefs(self):
 
         model_name = get_model_name(self.estimator)
         
         save_loc = (self.feature_plot_base_path +
-                    '_'+self.model_name.lower().replace(' ', '_') +
+                    self.model_name.lower().replace(' ', '_') +
+                    '_coefs_' +
                     self.suffix +
                     self.image_filetype)
         
@@ -267,6 +333,7 @@ class ModelEvaluator:
         os.makedirs(os.path.dirname(save_loc), exist_ok=True)
 
         # preprocess the data
+        X_train_transformed = self.estimator.named_steps["pre_processing"].transform(self.X_train)
         X_test_transformed = self.estimator.named_steps["pre_processing"].transform(self.X)
 
         # get feature names
@@ -287,7 +354,11 @@ class ModelEvaluator:
             return None
 
         # initialize SHAP explainer
-        explainer = shap.TreeExplainer(ml_model)
+        if self.model_name=='Logistic Regression':
+            masker = shap.maskers.Impute(X_train_transformed)
+            explainer = shap.LinearExplainer(ml_model, masker=masker)
+        else:
+            explainer = shap.TreeExplainer(ml_model)
         shap_values = explainer.shap_values(X_test_transformed)
 
         try:
@@ -300,7 +371,7 @@ class ModelEvaluator:
 
         plt.figure(figsize=(18, 18))
 
-        shap.summary_plot(shap_values, X_test_transformed, max_display=10, show=False)
+        shap.summary_plot(shap_values, X_test_transformed, max_display=10, plot_size=(10, 6), show=False)
 
         plt.title(title, pad=20)
 
