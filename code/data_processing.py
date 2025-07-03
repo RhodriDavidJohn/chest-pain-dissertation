@@ -37,8 +37,18 @@ df = df.iloc[:, 1:].copy()
 
 LOGGER.info("Loaded the raw data")
 
+
+# remove patients who die within 30 days
+# and are not re diagnosed with mi 
+# as they are censored
+df = df[~((df['death_precise']==1)&(df['subsequent_mi_30days_diagnosis']!=1))].copy()
+
+
 # remove unneccesary columns
 df = df.drop(columns=drop_columns).copy()
+
+# limit the ange range to >18 and <100
+df = df[(df['age']>=18)].copy()
 
 # fill NaN comorbidity values with 0
 df[comorbidities] = df[comorbidities].fillna(0)
@@ -48,15 +58,14 @@ for col in df.columns:
     if df[col].dtype=='object':
         df[col] = df[col].str.lower()
         df[col] = df[col].str.replace(' ', '_')
+        if col == 'diagnosis_description':
+            df[col] = df[col].fillna('other')
+        else:
+            df[col] = df[col].fillna('unknown')
+
 
 # group category values for sex and smoking
 df['sex'] = df['sex'].replace('not_specified', 'unknown')
-df['sex'] = df['sex'].fillna('unknown')
-
-df['smoking'] = df['smoking'].fillna('unknown')
-
-# fill null values in diagnosis description with 'other'
-df['diagnosis_description'] = df['diagnosis_description'].fillna('other')
 
 
 # if time in ae, ip, or total is negative
@@ -69,15 +78,10 @@ df['total_duration_hrs'] = np.where(total_time_negative, np.nan, df['total_durat
 
 
 # derive days in ip and total
-# 14 forced to be the max
-days = 14
-hours = 24*days
-bins = [i for i in range(0, hours+25, 24)]
+df['ip_duration_days'] = df['ip_duration_hrs']//24
+df['total_duration_days'] = df['total_duration_hrs']//24
 
-df['ip_duration_days'] = np.where(df['ip_duration_hrs']>hours, hours+1, df['ip_duration_hrs'])
-df['total_duration_days'] = df['ae_duration_hrs'] + df['ip_duration_days']
-df['ip_duration_days'] = pd.cut(df['ip_duration_days'], bins=bins, labels=list(range(days+1)))
-df['total_duration_days'] = pd.cut(df['total_duration_days'], bins=bins, labels=list(range(days+1)))
+df = df.drop(['ip_duration_hrs', 'total_duration_hrs'], axis=1).copy()
 
 
 # group large test results
@@ -118,19 +122,11 @@ df['departure_season'] = ['spring' if month in [3,4,5] else
                         'autumn' if month in [9,10,11] else
                         'winter' for month in df['departure_month']]
 
-df = df.drop('departure_date', axis=1).copy()
+df = df.drop(['departure_date', 'departure_month'], axis=1).copy()
 
 
 # make chd diagnosis code not include mi
 df['chd_diagnosis_code'] = np.where(df['mi_diagnosis_code']==1, 0, df['chd_diagnosis_code'])
-
-
-# derive the mi or death outcome variable
-positive_condition = (
-    (df['subsequent_mi_30days_diagnosis']==1) |
-    (df['death_precise']==1)
-)
-df['mi_or_death_30days'] = np.where(positive_condition, 1, 0)
 
 
 LOGGER.info("Finished processing data")
