@@ -272,8 +272,8 @@ class ModelEvaluator:
         model_name = get_model_name(self.estimator)
         
         save_loc = (self.feature_plot_base_path +
-                    self.model_name.lower().replace(' ', '_') +
                     '_coefs_' +
+                    self.model_name.lower().replace(' ', '_') +
                     self.suffix +
                     self.image_filetype)
         
