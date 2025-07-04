@@ -53,6 +53,7 @@ def evaluate_models(suffix, d_type):
     base_eval.predict_probabilitess()
     base_metrics = base_eval.get_ml_metrics()
     base_eval.plot_roc_pr_curve()
+    base_eval.plot_confusion_matrix()
     base_eval.plot_coefs()
     base_eval.plot_shap()
     base_eval.plot_calibration_curve()
@@ -68,6 +69,7 @@ def evaluate_models(suffix, d_type):
     best_eval.predict_probabilitess()
     best_metrics = best_eval.get_ml_metrics()
     best_eval.plot_roc_pr_curve()
+    best_eval.plot_confusion_matrix()
     best_eval.plot_shap()
     best_eval.plot_calibration_curve()
 
