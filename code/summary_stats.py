@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import numpy as np
 
 from utils.helpers import logger_setup, load_csv, save_to_csv
 
@@ -52,6 +53,15 @@ for col in df.columns:
     if set(df[col])=={0, 1}:
         count_cols.append(col)
 
+
+# low counts for diagnosis description congenital heart disease
+# so add these to the other option to avoid disclosure
+df['diagnosis_description_other'] = np.where(
+    df['diagnosis_description_congenital_heart_disease']==1,
+    1, df['diagnosis_description_other']
+)
+
+
 total_count = len(df)
 nbt_df = df[df['site_ip_nbt']==1]
 total_nbt_count = len(nbt_df)
@@ -66,8 +76,12 @@ summary_data = [['Number of patients',
                  format_counts(total_uhbw_count, total_count)]]
 
 # loop  through each column to get stats by column
+avoid_cols = ['site_ip_nbt', 'site_ip_uhbw',
+              'site_ae_nbt', 'site_ae_uhbw',
+              'sex_male', 'sex_unknown',
+              'diagnosis_description_congenital_heart_disease']
 for col in df.columns:
-    if ('nbt' in col) or ('uhbw' in col):
+    if col in avoid_cols:
          continue
     
     data = [col.replace('_', ' ')]
