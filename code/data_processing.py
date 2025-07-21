@@ -28,7 +28,10 @@ clean_data_path = config.get('data', 'clean_data_path')
 
 drop_columns = config.get('processing', 'drop_columns').replace('\n', '').replace(' ', '').split(',')
 comorbidities = config.get('processing', 'comorbidities').replace('\n', '').replace(' ', '').split(',')
+age_threshold = int(config.get('processing', 'age_threshold'))
 tnt_threshold = int(config.get('processing', 'tnt_threshold'))
+egfr_threshold = int(config.get('processing', 'egfr_threshold'))
+ae_target = int(config.get('processing', 'ae_target'))
 
 
 # load data
@@ -68,6 +71,12 @@ for col in df.columns:
 df['sex'] = df['sex'].replace('not_specified', 'unknown')
 
 
+# derive variables
+
+# age >70
+df[f'age_threshold'] = np.where(df['age']>age_threshold, 1, 0)
+
+
 # if time in ae, ip, or total is negative
 # replace with null
 df['ae_duration_hrs'] = np.where(df['ae_duration_hrs']<0, np.nan, df['ae_duration_hrs'])
@@ -75,6 +84,9 @@ df['ip_duration_hrs'] = np.where(df['ip_duration_hrs']<0, np.nan, df['ip_duratio
 
 total_time_negative = ((df['ae_duration_hrs']<0)|(df['ip_duration_hrs']<0)|(df['total_duration_hrs']<0))
 df['total_duration_hrs'] = np.where(total_time_negative, np.nan, df['total_duration_hrs'])
+
+# variabel to flag patients who were in a&e for less then 4 hours (nhs target)
+df['ae_target'] = np.where(df['ae_duration_hrs']<ae_target, 1, 0)
 
 
 # derive days in ip and total
@@ -84,19 +96,22 @@ df['total_duration_days'] = df['total_duration_hrs']//24
 df = df.drop(['ip_duration_hrs', 'total_duration_hrs'], axis=1).copy()
 
 
-# group large test results
-df['first_tnt_24hr_int'] = [tnt_threshold+1 if x>tnt_threshold else x for x in df['first_tnt_24hr_int']]
-df['max_tnt_24hr_int'] = [tnt_threshold+1 if x>tnt_threshold else x for x in df['max_tnt_24hr_int']]
-
 # replace -1 with nulls
 df['first_tnt_24hr_int'] = np.where(df['first_tnt_24hr_int']==-1, np.nan, df['first_tnt_24hr_int'])
 df['max_tnt_24hr_int'] = np.where(df['max_tnt_24hr_int']==-1, np.nan, df['max_tnt_24hr_int'])
+
+# group large test results
+df['tnt_rule_in'] = np.where(df['max_tnt_24hr_int']>tnt_threshold, 1, 0)
 
 
 # derive variables to capture
 # change in tnt and egfr
 df['tnt_change'] = df['max_tnt_24hr_int'] / df['first_tnt_24hr_int']
 df['egfr_change'] = df['min_egfr_24hr_int'] / df['first_egfr_24hr_int']
+
+
+# egfr
+df['egfr_rule_in'] = np.where(df['min_egfr_24hr_int']<egfr_threshold, 1, 0)
 
 
 # derive variable to capture relationship
