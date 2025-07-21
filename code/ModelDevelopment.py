@@ -90,23 +90,6 @@ class ModelDeveloper:
         save_to_csv(training_data, train_filename, self.LOGGER)
         save_to_csv(validation_data, val_filename, self.LOGGER)
         save_to_csv(testing_data, test_filename, self.LOGGER)
-
-    
-    def remove_outliers(self, X_transformed, save_loc, nu=0.01):
-
-        clf = OneClassSVM(nu=nu)
-        clf.fit(X_transformed)
-
-        outlier_predictions = clf.predict(X_transformed)
-        mask = outlier_predictions != -1
-
-        train_data_outliers_removed = (
-            pd.concat([self.X_train.loc[mask, :], self.y_train[mask]],
-                      axis=1)
-        )
-        save_to_csv(train_data_outliers_removed, save_loc, self.LOGGER)
-
-        return self.X_train.loc[mask, :], self.y_train[mask]
     
 
     def train_models(self, X, y):
