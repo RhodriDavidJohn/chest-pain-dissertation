@@ -65,12 +65,12 @@ class ModelDeveloper:
                f"set and {test_set}% testing set...")
         self.LOGGER.info(msg)
 
-        X_train, X_test, y_train, y_test = train_test_split(
+        X_train_val, X_test, y_train_val, y_test = train_test_split(
             self.X, self.y, test_size=test_set/100, stratify=self.y, random_state=self.seed
         )
         val_size = validation_size/(train_size+validation_size)
         X_train, X_val, y_train, y_val = train_test_split(
-            self.X, self.y, test_size=val_size, stratify=self.y, random_state=self.seed
+            X_train_val, y_train_val, test_size=val_size, stratify=y_train_val, random_state=self.seed
         )
 
         self.X_train = X_train.drop('nhs_number', axis=1).copy()
@@ -213,11 +213,11 @@ class ModelDeveloper:
             raise ValueError(msg)
 
         impute_and_scale = Pipeline([
-            ("numeric_impute", SimpleImputer(strategy="mean")),
+            ("numeric_impute", SimpleImputer(strategy="median")),
             ("numeric_transformation", StandardScaler())
         ])
         binary_and_discrete_impute = Pipeline([
-            ("numeric_impute", SimpleImputer(strategy="mean"))
+            ("numeric_impute", SimpleImputer(strategy="median"))
         ])
         impute_and_one_hot_encode = Pipeline([
             ("categorical_transformation", OneHotEncoder(handle_unknown='infrequent_if_exist'))
