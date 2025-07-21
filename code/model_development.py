@@ -94,7 +94,7 @@ LOGGER.info("===================================")
 LOGGER.info("Fitting models on the NBT data...")
 
 X_nbt = (df[df['site_ip']=='nbt']
-         .drop(['site_ip', outcome_mi], axis=1)
+         .drop(['site_ip', 'site_ae', outcome_mi], axis=1)
          .copy())
 y_nbt = df.loc[df['site_ip']=='nbt', outcome_mi].copy()
 
@@ -105,7 +105,7 @@ nbt_val_filename = val_data_path + nbt + data_filetype
 nbt_test_filename = test_data_path + nbt + data_filetype
 nbt_dev.split_data(train_size, validation_size, nbt_train_filename, nbt_val_filename, nbt_test_filename)
 
-nbt_dev.create_preprocessing_pipeline(['site_ip'])
+nbt_dev.create_preprocessing_pipeline(['site_ip', 'site_ae', 'transfered_dv'])
 X_transformed_nbt = nbt_dev.preprocsessing_pipe.fit_transform(nbt_dev.X_train)
 nbt_outliers_removed_path = nbt_train_filename[:-4] + '_outliers_removed' + data_filetype
 X_train_nbt, y_train_nbt = nbt_dev.remove_outliers(X_transformed_nbt, nbt_outliers_removed_path)
@@ -126,7 +126,7 @@ LOGGER.info("===================================")
 LOGGER.info("Fitting models on the UHBW data...")
 
 X_uhbw = (df[df['site_ip']=='uhbw']
-         .drop(['site_ip', outcome_mi], axis=1)
+         .drop(['site_ip', 'site_ae', outcome_mi], axis=1)
          .copy())
 y_uhbw = df.loc[df['site_ip']=='uhbw', outcome_mi].copy()
 
@@ -137,7 +137,7 @@ uhbw_val_filename = val_data_path + uhbw + data_filetype
 uhbw_test_filename = test_data_path + uhbw + data_filetype
 uhbw_dev.split_data(train_size, validation_size, uhbw_train_filename, uhbw_val_filename, uhbw_test_filename)
 
-uhbw_dev.create_preprocessing_pipeline(['site_ip'])
+uhbw_dev.create_preprocessing_pipeline(['site_ip', 'site_ae'])
 X_transformed_uhbw = uhbw_dev.preprocsessing_pipe.fit_transform(uhbw_dev.X_train)
 uhbw_outliers_removed_path = uhbw_train_filename[:-4] + '_outliers_removed' + data_filetype
 X_train_uhbw, y_train_uhbw = uhbw_dev.remove_outliers(X_transformed_uhbw, uhbw_outliers_removed_path)
