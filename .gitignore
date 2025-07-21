@@ -10,3 +10,4 @@ code/__pycache__
 code/.ipynb_checkpoints
 code/utils/__pycache__
 code/utils/.ipynb_checkpoints
+code/experiments/*
