@@ -11,15 +11,17 @@ import shap.maskers
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import(roc_auc_score,
                             f1_score,
+                            fbeta_score,
                             recall_score,
                             precision_score,
-                            balanced_accuracy_score,
-                            roc_curve,
                             precision_recall_curve,
                             auc,
                             brier_score_loss,
                             confusion_matrix,
-                            ConfusionMatrixDisplay)
+                            ConfusionMatrixDisplay,
+                            RocCurveDisplay,
+                            PrecisionRecallDisplay)
+from imblearn.metrics import geometric_mean_score
 from sklearn.calibration import calibration_curve
 
 from utils.helpers import get_model_name, get_model_features, map_model_name
@@ -33,7 +35,7 @@ class ModelEvaluator:
         self.LOGGER = LOGGER
 
         self.pipe = pipe
-        self.estimator = pipe.estimator.estimator
+        self.estimator = pipe.estimator
         self.model_name = map_model_name(get_model_name(self.estimator), self.LOGGER)
         
         self.outcome = 'MI'
@@ -130,11 +132,12 @@ class ModelEvaluator:
     def get_ml_metrics(self) -> pd.DataFrame:
     
         # calculate metrics
-        accuracy = balanced_accuracy_score(self.y, self.y_pred)
-        b_score = brier_score_loss(self.y, self.y_prob)
+        g_mean = geometric_mean_score(self.y, self.y_pred)
         precision_value = precision_score(self.y, self.y_pred)
         recall_value = recall_score(self.y, self.y_pred)
         f1 = f1_score(self.y, self.y_pred)
+        f2 = fbeta_score(self.y, self.y_pred, beta=2)
+        f05 = fbeta_score(self.y, self.y_pred, beta=0.5)
         tn, fp, fn, tp = confusion_matrix(self.y, self.y_pred).ravel()
         specificity = tn/(tn+fp)
         roc_auc = roc_auc_score(self.y, self.y_prob)
@@ -147,12 +150,13 @@ class ModelEvaluator:
             'Model': [self.model_name],
             'PR-AUC': [round(pr_auc, 3)],
             'ROC-AUC': [round(roc_auc, 3)],
-            'Brier Score': [round(b_score, 3)],
             'F1 Score': [round(f1, 3)],
+            'F2 Score': [round(f2, 3)],
+            'F0.5 Score': [round(f05, 3)],
             'Recall': [round(recall_value, 3)],
             'Precision': [round(precision_value, 3)],
             'Specificity': [round(specificity, 3)],
-            'Weighted Accuracy': [round(accuracy, 3)]
+            'Geometric Mean': [round(g_mean, 3)]
         })
 
         metrics_df = (metrics_df
@@ -198,37 +202,35 @@ class ModelEvaluator:
 
     def plot_roc_curve(self, ax):
 
-        # calculate ROC
-        fpr = roc_curve(self.y, self.y_prob)[0]
-        tpr = roc_curve(self.y, self.y_prob)[1]
-        roc_auc = auc(fpr, tpr)
-
         # plot ROC
-        ax.plot(fpr, tpr, color='blue', lw=2,
-                label=f'ROC curve (AUC = {roc_auc:.3f})')
-        ax.plot([0,1], [0,1], color='black', linestyle='--', lw=1)
+        display = RocCurveDisplay.from_predictions(
+            self.y,
+            self.y_prob,
+            name=self.model_name,
+            ax=ax,
+            plot_chance_level=True,
+            chance_level_kw={'linestyle': ':'}
+        )
+        ax.set_title('(a) Receiver Operating Characteristic (ROC) Curve')
+        ax.set_ylabel('True Positive Rate')
         ax.set_xlabel('False Positive Rate')
-        ax.set_ylabel('True positive Rate')
-        ax.legend(loc='lower right')
 
         return None
 
 
     def plot_pr_curve(self, ax):
         
-        # calculate ROC
-        precision, recall, _ = precision_recall_curve(self.y, self.y_prob)
-        pr_auc = auc(recall, precision)
-
-        base = len(self.y[self.y==1])/len(self.y)
-
-        # plot ROC
-        ax.plot([0, 1], [base, base], linestyle='--', color='black')
-        ax.plot(recall, precision, color='red', lw=2,
-                label=f'PR curve (AUC = {pr_auc:.3f})')
-        ax.set_xlabel('Recall')
+        display = PrecisionRecallDisplay.from_predictions(
+            self.y,
+            self.y_prob,
+            name=self.model_name,
+            ax=ax,
+            plot_chance_level=True,
+            chance_level_kw={'linestyle': ':'}
+        )
+        ax.set_title('(b) Precision-Recall (PR) Curve')
         ax.set_ylabel('Precision')
-        ax.legend(loc='lower right')
+        ax.set_xlabel('Recall')
 
         return None
     
