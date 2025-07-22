@@ -32,8 +32,10 @@ clean_data_path = config.get('data', 'clean_data_path')
 train_data_path = config.get('data', 'train_data_path')
 val_data_path = config.get('data', 'validation_data_path')
 test_data_path = config.get('data', 'test_data_path')
-base_model_filename = config.get('model_development', 'base_model_filename')
-best_model_filename = config.get('model_development', 'best_model_filename')
+lreg_model_filename = config.get('model_development', 'lreg_model_filename')
+rfc_model_filename = config.get('model_development', 'rfc_model_filename')
+xgb_model_filename = config.get('model_development', 'xgb_model_filename')
+lgbm_model_filename = config.get('model_development', 'lgbm_model_filename')
 data_filetype = config.get('global', 'data_filetype')
 model_filetype = config.get('model_development', 'models_filetype')
 
@@ -76,14 +78,20 @@ full_dev.split_data(train_size, validation_size, full_train_filename, full_val_f
 full_dev.create_preprocessing_pipeline()
 full_dev.train_models(full_dev.X_train, full_dev.y_train)
 
-base_model = full_dev.get_model('Logistic Regression')
-best_model = full_dev.get_model()
+lreg_model = full_dev.get_model('Logistic Regression')
+rfc_model = full_dev.get_model('Random Forest')
+xgb_model = full_dev.get_model('XGBoost')
+lgbm_model = full_dev.get_model('LightGBM')
 
-full_base_model_path = base_model_filename + full + model_filetype
-full_best_model_path = best_model_filename + full + model_filetype
+full_lreg_model_path = lreg_model_filename + full + model_filetype
+full_rfc_model_path = rfc_model_filename + full + model_filetype
+full_xgb_model_path = xgb_model_filename + full + model_filetype
+full_lgbm_model_path = lgbm_model_filename + full + model_filetype
 
-save_model(base_model, full_base_model_path, LOGGER)
-save_model(best_model, full_best_model_path, LOGGER)
+save_model(lreg_model, full_lreg_model_path, LOGGER)
+save_model(rfc_model, full_rfc_model_path, LOGGER)
+save_model(xgb_model, full_xgb_model_path, LOGGER)
+save_model(lgbm_model, full_lgbm_model_path, LOGGER)
 
 
 LOGGER.info("===================================")
@@ -104,14 +112,20 @@ nbt_dev.split_data(train_size, validation_size, nbt_train_filename, nbt_val_file
 nbt_dev.create_preprocessing_pipeline(['site_ip', 'site_ae', 'transfered_dv'])
 nbt_dev.train_models(nbt_dev.X_train, nbt_dev.y_train)
 
-base_model = nbt_dev.get_model('Logistic Regression')
-best_model = nbt_dev.get_model()
+lreg_model = nbt_dev.get_model('Logistic Regression')
+rfc_model = nbt_dev.get_model('Random Forest')
+xgb_model = nbt_dev.get_model('XGBoost')
+lgbm_model = nbt_dev.get_model('LightGBM')
 
-nbt_base_model_path = base_model_filename + nbt + model_filetype
-nbt_best_model_path = best_model_filename + nbt + model_filetype
+nbt_lreg_model_path = lreg_model_filename + nbt + model_filetype
+nbt_rfc_model_path = rfc_model_filename + nbt + model_filetype
+nbt_xgb_model_path = xgb_model_filename + nbt + model_filetype
+nbt_lgbm_model_path = lgbm_model_filename + nbt + model_filetype
 
-save_model(base_model, nbt_base_model_path, LOGGER)
-save_model(best_model, nbt_best_model_path, LOGGER)
+save_model(lreg_model, nbt_lreg_model_path, LOGGER)
+save_model(rfc_model, nbt_rfc_model_path, LOGGER)
+save_model(xgb_model, nbt_xgb_model_path, LOGGER)
+save_model(lgbm_model, nbt_lgbm_model_path, LOGGER)
 
 
 LOGGER.info("===================================")
@@ -132,14 +146,20 @@ uhbw_dev.split_data(train_size, validation_size, uhbw_train_filename, uhbw_val_f
 uhbw_dev.create_preprocessing_pipeline(['site_ip', 'site_ae'])
 uhbw_dev.train_models(uhbw_dev.X_train, uhbw_dev.y_train)
 
-base_model = uhbw_dev.get_model('Logistic Regression')
-best_model = uhbw_dev.get_model()
+lreg_model = uhbw_dev.get_model('Logistic Regression')
+rfc_model = uhbw_dev.get_model('Random Forest')
+xgb_model = uhbw_dev.get_model('XGBoost')
+lgbm_model = uhbw_dev.get_model('LightGBM')
 
-uhbw_base_model_path = base_model_filename + uhbw + model_filetype
-uhbw_best_model_path = best_model_filename + uhbw + model_filetype
+uhbw_lreg_model_path = lreg_model_filename + uhbw + model_filetype
+uhbw_rfc_model_path = rfc_model_filename + uhbw + model_filetype
+uhbw_xgb_model_path = xgb_model_filename + uhbw + model_filetype
+uhbw_lgbm_model_path = lgbm_model_filename + uhbw + model_filetype
 
-save_model(base_model, uhbw_base_model_path, LOGGER)
-save_model(best_model, uhbw_best_model_path, LOGGER)
+save_model(lreg_model, uhbw_lreg_model_path, LOGGER)
+save_model(rfc_model, uhbw_rfc_model_path, LOGGER)
+save_model(xgb_model, uhbw_xgb_model_path, LOGGER)
+save_model(lgbm_model, uhbw_lgbm_model_path, LOGGER)
 
 
 
