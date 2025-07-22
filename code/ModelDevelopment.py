@@ -238,8 +238,7 @@ class ModelDeveloper:
         }
         trained_model = self.tune_hyperparameters(X, y, model, params, "lreg_model", "Logistic Regression")
         
-        calibrated_model = self.calibrate_probabilities(trained_model['model'], "Logistic Regression")
-        tuned_model = self.tune_threshold(calibrated_model, "Logistic Regression")
+        tuned_model = self.tune_threshold(trained_model['model'], "Logistic Regression")
         trained_model['model'] = tuned_model
 
         trained_model['scores'] = self.get_validation_auc(tuned_model, "Logistic Regression")
@@ -263,8 +262,7 @@ class ModelDeveloper:
         }
         trained_model = self.tune_hyperparameters(X, y, model, params, "rfc_model", "Random Forest")
         
-        calibrated_model = self.calibrate_probabilities(trained_model['model'], "Random Forest")
-        tuned_model = self.tune_threshold(calibrated_model, "Random Forest")
+        tuned_model = self.tune_threshold(trained_model['model'], "Random Forest")
         trained_model['model'] = tuned_model
 
         trained_model['scores'] = self.get_validation_auc(tuned_model, "Random Forest")
@@ -289,8 +287,7 @@ class ModelDeveloper:
         }
         trained_model = self.tune_hyperparameters(X, y, model, params, "xgb_model", "XGBoost")
         
-        calibrated_model = self.calibrate_probabilities(trained_model['model'], "XGBoost")
-        tuned_model = self.tune_threshold(calibrated_model, "XGBoost")
+        tuned_model = self.tune_threshold(trained_model['model'], "XGBoost")
         trained_model['model'] = tuned_model
 
         trained_model['scores'] = self.get_validation_auc(tuned_model, "XGBoost")
@@ -314,8 +311,7 @@ class ModelDeveloper:
         }
         trained_model = self.tune_hyperparameters(X, y, model, params, "lgbm_model", "LightGBM")
         
-        calibrated_model = self.calibrate_probabilities(trained_model['model'], "LightGBM")
-        tuned_model = self.tune_threshold(calibrated_model, "LightGBM")
+        tuned_model = self.tune_threshold(trained_model['model'], "LightGBM")
         trained_model['model'] = tuned_model
 
         trained_model['scores'] = self.get_validation_auc(tuned_model, "LightGBM")
