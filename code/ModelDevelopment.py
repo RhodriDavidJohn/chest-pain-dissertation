@@ -276,10 +276,9 @@ class ModelDeveloper:
 
         self.LOGGER.info("Training XGBoost model...")
 
-        model = XGBClassifier(seed=self.seed)
+        model = XGBClassifier(objective='binary:logistic', seed=self.seed)
         
         params = {
-            "xgb_model__objective": ['reg:squarederror', 'binary:logistic'],
             "xgb_model__n_estimators": [500, 750, 1000],
             "xgb_model__eta": [0.01, 0.1, 0.3, 0.5],
             "xgb_model__gamma": [0, 1, 10, 50, 100],
