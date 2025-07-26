@@ -5,6 +5,7 @@ import logging
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 import shap
 
 import shap.maskers
@@ -24,7 +25,7 @@ from sklearn.metrics import(roc_auc_score,
 from imblearn.metrics import geometric_mean_score
 from sklearn.calibration import calibration_curve
 
-from utils.helpers import get_model_name, get_model_features, map_model_name
+from utils.helpers import get_model_name, get_model_features, map_model_name, remove_file
 
 
 class ModelEvaluator:
@@ -319,20 +320,70 @@ class ModelEvaluator:
         self.LOGGER.info(msg)
 
         return None
-
+    
 
     def plot_shap(self):
 
-        logging.getLogger('shap').setLevel(logging.WARNING)
-
-        model_name = get_model_name(self.estimator)
-        
         save_loc = (self.feature_plot_base_path +
                     '_'+self.model_name.lower().replace(' ', '_') +
                     self.suffix +
                     self.image_filetype)
         
         os.makedirs(os.path.dirname(save_loc), exist_ok=True)
+
+        self.get_shap_values()
+
+        summary_filepath = 'results/shap_summary_temp.png'
+        bar_filepath = 'results/shap_bar_temp.png'
+
+        self.plot_shap_summary(summary_filepath)
+        self.plot_shap_bar(bar_filepath)
+
+        title = f"SHAP Plots (Top 10 Features): {self.model_name} with the {self.d_type} data"
+
+        fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(12, 6))
+
+        axs = ax.ravel()
+
+        summary_title = "(a) Global feature importance - Individual SHAP values"
+        bar_title = "(b) Global feature importance - Average absolute SHAP values"
+
+        summary = mpimg.imread(summary_filepath)
+        bar = mpimg.imread(bar_filepath)
+
+        axs[0].imshow(summary)
+        axs[0].axis('off')
+
+        axs[1].imshow(bar)
+        axs[1].axis('off')
+
+        for axis in axs:
+            axis.set_box_aspect(1)
+        
+        axs[0].set_title(summary_title)
+        axs[1].set_title(bar_title)
+
+        remove_file(summary_filepath, self.LOGGER)
+        remove_file(bar_filepath, self.LOGGER)
+        
+        fig.suptitle(title)
+        _ = plt.tight_layout(pad=2.0)
+        
+        plt.savefig(save_loc)
+        plt.close()
+
+        msg = (f"{self.model_name} feature importance "
+               f"plots saved to {save_loc}")
+        self.LOGGER.info(msg)
+
+        return None
+
+
+    def get_shap_values(self):
+
+        logging.getLogger('shap').setLevel(logging.WARNING)
+
+        model_name = get_model_name(self.estimator)
 
         # preprocess the data
         X_train_transformed = self.estimator.named_steps["pre_processing"].transform(self.X_train)
@@ -344,6 +395,7 @@ class ModelEvaluator:
         X_test_transformed = pd.DataFrame(
             data=X_test_transformed, columns=features
         )
+        self.X_test_transformed_shap = X_test_transformed
 
         # extract the model from the pipeline
         ml_model = self.estimator.named_steps[model_name]
@@ -361,6 +413,8 @@ class ModelEvaluator:
             explainer = shap.LinearExplainer(ml_model, masker=masker)
         else:
             explainer = shap.TreeExplainer(ml_model)
+        
+        self.shap_explainer = explainer
         shap_values = explainer.shap_values(X_test_transformed)
 
         try:
@@ -368,23 +422,40 @@ class ModelEvaluator:
         except:
             pass
         
+        self.shap_values = shap_values
+
+        return None
+
+
+    def plot_shap_summary(self, filepath):
+
+        logging.getLogger('shap').setLevel(logging.WARNING)
+
+        plt.figure()
+
         # plot SHAP summary plot
-        title = (f"SHAP Plot (Top 10 Features): {self.model_name} with the {self.d_type} data")
+        shap.summary_plot(self.shap_values, self.X_test_transformed_shap, max_display=10, show=False)
 
-        plt.figure(figsize=(18, 18))
-
-        shap.summary_plot(shap_values, X_test_transformed, max_display=10, plot_size=(10, 6), show=False)
-
-        plt.title(title, pad=20)
-
-        # Save the plot
         plt.tight_layout()
-        plt.savefig(save_loc, bbox_inches='tight')
+        plt.savefig(filepath, bbox_inches='tight')
         plt.close()
 
-        msg = (f"{self.model_name} SHAP feature "
-               f"importance plot saved to {save_loc}")
-        self.LOGGER.info(msg)
+        return None
+
+
+    def plot_shap_bar(self, filepath):
+
+        logging.getLogger('shap').setLevel(logging.WARNING)
+
+        fig = plt.figure()
+        
+        # plot SHAP summary plot
+        shap.summary_plot(self.shap_values, self.X_test_transformed_shap, plot_type='bar',
+                          max_display=10, show=False, plot_size=(10, 6))
+
+        plt.tight_layout()
+        plt.savefig(filepath)
+        plt.close()
 
         return None
 
