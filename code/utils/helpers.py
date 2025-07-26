@@ -80,6 +80,16 @@ def load_model(filepath: str, LOGGER: logging.Logger):
         raise(e)
 
 
+def remove_file(filepath: str, LOGGER: logging.Logger):
+
+    if os.path.exists(filepath):
+        os.remove(filepath)
+        LOGGER.info(f"File deleted: {filepath}")
+    else:
+        LOGGER.warning(f"File does not exist: {filepath}")
+        raise ValueError(f"Filepath does not exist: {filepath}")
+
+
 def get_model_name(pipe: Pipeline) -> str:
     return list(pipe.named_steps.keys())[-1]
 
