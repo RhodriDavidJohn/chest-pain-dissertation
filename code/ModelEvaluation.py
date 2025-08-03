@@ -245,7 +245,7 @@ class ModelEvaluator:
         
         os.makedirs(os.path.dirname(save_loc), exist_ok=True)
 
-        labels = ['Not re-admitted with MI', 'Re-admitted with MI']
+        labels = ['No secondary MI within 30 days', 'Secondary MI within 30 days']
         cm = confusion_matrix(
             y_true=self.y,
             y_pred=self.y_pred
