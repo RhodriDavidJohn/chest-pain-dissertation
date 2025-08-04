@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 
 from sklearn.metrics import(roc_auc_score,
+                            matthews_corrcoef,
                             f1_score,
                             fbeta_score,
                             recall_score,
@@ -185,6 +186,7 @@ def eval_metrics(model_name, model_data, test_data, y_true, y_pred, y_pred_proba
     
         # calculate metrics
         g_mean = geometric_mean_score(y_true, y_pred)
+        mcc = matthews_corrcoef(y_true, y_pred)
         precision_value = precision_score(y_true, y_pred)
         recall_value = recall_score(y_true, y_pred)
         f1 = f1_score(y_true, y_pred)
@@ -203,6 +205,7 @@ def eval_metrics(model_name, model_data, test_data, y_true, y_pred, y_pred_proba
             'Test Data': [test_data],
             'PR-AUC': [round(pr_auc, 3)],
             'ROC-AUC': [round(roc_auc, 3)],
+            'MCC': [round(mcc, 3)],
             'F1 Score': [round(f1, 3)],
             'F2 Score': [round(f2, 3)],
             'F0.5 Score': [round(f05, 3)],

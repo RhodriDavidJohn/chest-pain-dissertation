@@ -11,6 +11,7 @@ import shap
 import shap.maskers
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import(roc_auc_score,
+                            matthews_corrcoef,
                             f1_score,
                             fbeta_score,
                             recall_score,
@@ -134,6 +135,7 @@ class ModelEvaluator:
     
         # calculate metrics
         g_mean = geometric_mean_score(self.y, self.y_pred)
+        mcc = matthews_corrcoef(self.y, self.y_pred)
         precision_value = precision_score(self.y, self.y_pred)
         recall_value = recall_score(self.y, self.y_pred)
         f1 = f1_score(self.y, self.y_pred)
@@ -151,6 +153,7 @@ class ModelEvaluator:
             'Model': [self.model_name],
             'PR-AUC': [round(pr_auc, 3)],
             'ROC-AUC': [round(roc_auc, 3)],
+            'MCC': [round(mcc, 3)],
             'F1 Score': [round(f1, 3)],
             'F2 Score': [round(f2, 3)],
             'F0.5 Score': [round(f05, 3)],
