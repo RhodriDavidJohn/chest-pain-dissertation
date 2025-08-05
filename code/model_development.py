@@ -98,7 +98,7 @@ LOGGER.info("===================================")
 LOGGER.info("Fitting models on the NBT data...")
 
 X_nbt = (df[df['site_ip']=='nbt']
-         .drop(['site_ip', 'site_ae', outcome_mi], axis=1)
+         .drop(['site_ip', 'site_ae', 'transfered_dv', outcome_mi], axis=1)
          .copy())
 y_nbt = df.loc[df['site_ip']=='nbt', outcome_mi].copy()
 
