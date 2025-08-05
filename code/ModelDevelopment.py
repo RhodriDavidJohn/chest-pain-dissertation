@@ -175,17 +175,17 @@ class ModelDeveloper:
     def create_preprocessing_pipeline(self, removed_features=None):
 
         if removed_features is not None:
-            for feature in removed_features:
-                if feature in self.num_cols:
-                    self.num_cols.remove(feature)
-                elif feature in self.disc_cols:
-                    self.disc_cols.remove(feature)
-                elif feature in self.cat_cols:
-                    self.cat_cols.remove(feature)
-                else:
-                    self.LOGGER.error(f"Feature {feature} is not valid.")
-                    raise(ValueError((f"Feature {feature} is not valid. "
-                                      f"Feature must be in {self.X_train.columns.values.tolist()}")))
+            self.num_cols = [col for col in self.num_cols if col not in removed_features]
+            self.disc_cols = [col for col in self.disc_cols if col not in removed_features]
+            self.cat_cols = [col for col in self.cat_cols if col not in removed_features]
+            try:
+                assert len(self.X_train.columns)==len(self.num_cols)+len(self.disc_cols)+len(self.cat_cols)
+            except AssertionError as e:
+                msg = ("Set of features in preprocessing lists do not match feature set in X data. "
+                       f"Preprocessing features: {self.num_cols+self.disc_cols+self.cat_cols}. "
+                       f"X features: {self.X_train.columns.tolist()}")
+                self.LOGGER.error(msg)
+                raise(ValueError(msg))
         
         invalid_features = list(
             set(self.num_cols+self.disc_cols+self.cat_cols) - set(self.X_train.columns.values.tolist())
