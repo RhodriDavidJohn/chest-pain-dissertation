@@ -3,6 +3,7 @@ logs/*
 models/*
 results/*
 code/experiments/*
+code/supplementary_analysis/*
 code/exploratory_analysis.ipynb
 code/__pycache__
 code/.ipynb_checkpoints
