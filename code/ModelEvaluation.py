@@ -13,7 +13,6 @@ from sklearn.pipeline import Pipeline
 from sklearn.metrics import(roc_auc_score,
                             matthews_corrcoef,
                             f1_score,
-                            fbeta_score,
                             recall_score,
                             precision_score,
                             precision_recall_curve,
@@ -139,8 +138,6 @@ class ModelEvaluator:
         precision_value = precision_score(self.y, self.y_pred)
         recall_value = recall_score(self.y, self.y_pred)
         f1 = f1_score(self.y, self.y_pred)
-        f2 = fbeta_score(self.y, self.y_pred, beta=2)
-        f05 = fbeta_score(self.y, self.y_pred, beta=0.5)
         tn, fp, fn, tp = confusion_matrix(self.y, self.y_pred).ravel()
         specificity = tn/(tn+fp)
         roc_auc = roc_auc_score(self.y, self.y_prob)
@@ -151,16 +148,14 @@ class ModelEvaluator:
 
         metrics_df = pd.DataFrame({
             'Model': [self.model_name],
-            'PR-AUC': [round(pr_auc, 3)],
             'ROC-AUC': [round(roc_auc, 3)],
-            'MCC': [round(mcc, 3)],
+            'PR-AUC': [round(pr_auc, 3)],
             'F1 Score': [round(f1, 3)],
-            'F2 Score': [round(f2, 3)],
-            'F0.5 Score': [round(f05, 3)],
+            'G-Mean': [round(g_mean, 3)],
+            'MCC': [round(mcc, 3)],
             'Recall': [round(recall_value, 3)],
             'Precision': [round(precision_value, 3)],
-            'Specificity': [round(specificity, 3)],
-            'Geometric Mean': [round(g_mean, 3)]
+            'Specificity': [round(specificity, 3)]
         })
 
         metrics_df = (metrics_df
