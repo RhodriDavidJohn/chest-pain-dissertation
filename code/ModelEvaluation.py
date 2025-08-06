@@ -58,7 +58,7 @@ class ModelEvaluator:
         base_train_data_path = config.get('data', 'train_data_path')
         base_test_data_path = config.get('data', 'test_data_path')
         base_val_data_path = config.get('data', 'validation_data_path')
-        self.train_data_path = base_train_data_path + self.suffix + '_outliers_removed' + self.data_filetype
+        self.train_data_path = base_train_data_path + self.suffix + self.data_filetype
         self.test_data_path = base_test_data_path + self.suffix + self.data_filetype
         self.validation_data_path = base_val_data_path + self.suffix + self.data_filetype
 
@@ -140,6 +140,8 @@ class ModelEvaluator:
         f1 = f1_score(self.y, self.y_pred)
         tn, fp, fn, tp = confusion_matrix(self.y, self.y_pred).ravel()
         specificity = tn/(tn+fp)
+        npv = tn/(tn+fn)
+        ppv = tp/(tp+fp)
         roc_auc = roc_auc_score(self.y, self.y_prob)
 
         precision, recall, _ = precision_recall_curve(self.y, self.y_prob)
@@ -155,7 +157,9 @@ class ModelEvaluator:
             'MCC': [round(mcc, 3)],
             'Recall': [round(recall_value, 3)],
             'Precision': [round(precision_value, 3)],
-            'Specificity': [round(specificity, 3)]
+            'Specificity': [round(specificity, 3)],
+            'NPV': [round(npv, 3)],
+            'PPV': [round(ppv, 3)]
         })
 
         metrics_df = (metrics_df
