@@ -70,6 +70,14 @@ for col in df.columns:
 # group category values for sex and smoking
 df['sex'] = df['sex'].replace('not_specified', 'unknown')
 
+# categorise the ethnicity variable so 
+# one hot encoding happens in preprocessing
+df['ethnicity'] = np.where(df['ethnicity_white']==1, 'white', 'unknown')
+df['ethnicity'] = np.where(df['ethnicity_black']==1, 'black', df['ethnicity'])
+df['ethnicity'] = np.where(df['ethnicity_mixed']==1, 'mixed', df['ethnicity'])
+df['ethnicity'] = np.where(df['ethnicity_asian']==1, 'asian', df['ethnicity'])
+df['ethnicity'] = np.where(df['ethnicity_other']==1, 'other', df['ethnicity'])
+
 
 # derive variables
 
@@ -137,7 +145,10 @@ df['departure_season'] = ['spring' if month in [3,4,5] else
                         'autumn' if month in [9,10,11] else
                         'winter' for month in df['departure_month']]
 
-df = df.drop(['departure_date', 'departure_month'], axis=1).copy()
+drop_list = ['departure_date', 'departure_month', 'ethnicity_white',
+             'ethnicity_black', 'ethnicity_mixed', 'ethnicity_asian',
+             'ethnicity_other', 'ethnicity_unknown']
+df = df.drop(drop_list, axis=1).copy()
 
 
 # make chd diagnosis code not include mi
