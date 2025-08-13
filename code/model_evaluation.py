@@ -1,6 +1,7 @@
 # imports
 import os
 import pandas as pd
+import numpy as np
 from configparser import ConfigParser
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
@@ -256,6 +257,98 @@ def evaluate_model_robustness(information_dict):
     return metrics_df
 
 
+def plot_metrics(model_name, suffix):
+
+    LOGGER.info(f"Plotting metrics for {model_name}")
+
+    model_names = {'Logistic Regression': lreg_model_filename,
+                   'Random Forest': rfc_model_filename,
+                   'XGBoost': xgb_model_filename,
+                   'LightGBM': lgbm_model_filename}
+    
+    path = model_names[model_name]
+
+    filepath = path + suffix + model_filetype
+    model = hlp.load_model(filepath, LOGGER)
+    
+    eval_obj = ModelEvaluator(model, suffix, config, LOGGER)
+    eval_obj.load_data()
+    eval_obj.predict_outcomes()
+    eval_obj.predict_probabilitess()
+
+    # roc plot
+    save_loc = f'results/evaluation_plots/best_model_metric_plots/{model_name.lower().replace(" ", "_")}_roc_plot.png'
+    os.makedirs(os.path.dirname(save_loc), exist_ok=True)
+    fig, ax = plt.subplots()
+    eval_obj.plot_roc_curve(ax)
+    ax.set_title('')
+    plt.savefig(save_loc)
+    plt.close()
+
+    # pr curve plot
+    save_loc = f'results/evaluation_plots/best_model_metric_plots/{model_name.lower().replace(" ", "_")}_pr_curve_plot.png'
+    os.makedirs(os.path.dirname(save_loc), exist_ok=True)
+    fig, ax = plt.subplots()
+    eval_obj.plot_pr_curve(ax)
+    ax.set_title('')
+    plt.savefig(save_loc)
+    plt.close()
+
+    # threshold dependent metrics plot
+    save_loc = f'results/evaluation_plots/best_model_metric_plots/{model_name.lower().replace(" ", "_")}_main_threshold_metrics_plot.png'
+    os.makedirs(os.path.dirname(save_loc), exist_ok=True)
+    thresholds = np.linspace(0, 1, 1000)
+    best_threshold = model.best_threshold_
+    f1_scores_list = []
+    g_mean_score_list = []
+    mcc_score_list = []
+    for threshold in thresholds:
+        y_pred = eval_obj.y_prob >= threshold
+        f1_scores_list.append(f1_score(eval_obj.y, y_pred))
+        g_mean_score_list.append(geometric_mean_score(eval_obj.y, y_pred))
+        mcc_score_list.append(matthews_corrcoef(eval_obj.y, y_pred))
+    fig, ax = plt.subplots()
+    ax.plot(thresholds, mcc_score_list, label='MCC', color='orange')
+    ax.plot(thresholds, g_mean_score_list, label='G-Mean', color='green')
+    ax.plot(thresholds, f1_scores_list, label='F1-Score', color='blue')
+    ax.axvline(best_threshold, label='Tuned Threshold', color='black', linestyle='--')
+    ax.set(xlabel='Thresholds', ylabel='Metric Values', ylim=[0, 0.6], xlim=[0, 0.6])
+    ax.legend()
+    plt.savefig(save_loc)
+    plt.close()
+
+    # threshold dependent metrics plot
+    save_loc = f'results/evaluation_plots/best_model_metric_plots/{model_name.lower().replace(" ", "_")}_secondary_threshold_metrics_plot.png'
+    os.makedirs(os.path.dirname(save_loc), exist_ok=True)
+    thresholds = np.linspace(0, 1, 1000)
+    best_threshold = model.best_threshold_
+    recall_scores_list = []
+    precision_score_list = []
+    specificity_score_list = []
+    npv_score_list = []
+    ppv_score_list = []
+    for threshold in thresholds:
+        y_pred = eval_obj.y_prob >= threshold
+        recall_scores_list.append(recall_score(eval_obj.y, y_pred))
+        precision_score_list.append(precision_score(eval_obj.y, y_pred))
+        tn, fp, fn, tp = confusion_matrix(eval_obj.y, y_pred).ravel()
+        specificity_score_list.append(tn/(tn+fp))
+        npv_score_list.append(tn/(tn+fn))
+        ppv_score_list.append(tp/(tp+fp))
+    fig, ax = plt.subplots()
+    ax.plot(thresholds, ppv_score_list, label='PPV', color='pink')
+    ax.plot(thresholds, npv_score_list, label='NPV', color='purple')
+    ax.plot(thresholds, specificity_score_list, label='Specificity', color='orange')
+    ax.plot(thresholds, recall_scores_list, label='Recall', color='green')
+    ax.plot(thresholds, precision_score_list, label='Precision', color='blue')
+    ax.axvline(best_threshold, label='Tuned Threshold', color='black', linestyle='--')
+    ax.set(xlabel='Thresholds', ylabel='Metric Values', xlim=[0, 0.6])
+    ax.legend()
+    plt.savefig(save_loc)
+    plt.close()
+
+    return None
+
 
 
 
@@ -285,6 +378,10 @@ metrics = merge_multiindex(metrics, metrics_uhbw)
 LOGGER.info(f"Saving the evaluation metrics to {ml_metrics_path}")
 
 hlp.save_to_csv(metrics, ml_metrics_path, LOGGER)
+
+
+# plot metrics for best main model
+plot_metrics('Random Forest', full_suffix)
 
 
 # evaluate models against different subset of data
