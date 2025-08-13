@@ -75,12 +75,15 @@ class ModelDeveloper:
 
         self.X_train = X_train.drop('nhs_number', axis=1).copy()
         self.y_train = y_train
+        self.LOGGER.info(f"Percentage of positive class in train set: {100*y_train.mean():.1f}%")
 
         self.X_val = X_val.drop('nhs_number', axis=1).copy()
         self.y_val = y_val
+        self.LOGGER.info(f"Percentage of positive class in validation set: {100*y_val.mean():.1f}%")
 
         self.X_test = X_test.drop('nhs_number', axis=1).copy()
         self.y_test = y_test
+        self.LOGGER.info(f"Percentage of positive class in test set: {100*y_test.mean():.1f}%")
 
         # save the train-test data for model training and evaluation
         training_data = X_train.join(y_train)
@@ -338,6 +341,7 @@ class ModelDeveloper:
                                param_grid=params,
                                scoring='roc_auc',
                                cv=self.k_fold,
+                               refit=True,
                                n_jobs=-1,
                                verbose=0,
                                error_score=0.0)

@@ -68,6 +68,7 @@ starttime = time.time()
 LOGGER.info("================================")
 LOGGER.info("Fitting models on the full data...")
 
+LOGGER.info(f"Percentage of positive class in full data: {100*y_full.mean():.1f}%")
 full_dev = ModelDeveloper(X_full, y_full, full, config, LOGGER)
 
 full_train_filename = train_data_path + full + data_filetype
@@ -102,6 +103,7 @@ X_nbt = (df[df['site_ip']=='nbt']
          .copy())
 y_nbt = df.loc[df['site_ip']=='nbt', outcome_mi].copy()
 
+LOGGER.info(f"Percentage of positive class in NBT data: {100*y_nbt.mean():.1f}%")
 nbt_dev = ModelDeveloper(X_nbt, y_nbt, nbt, config, LOGGER)
 
 nbt_train_filename = train_data_path + nbt + data_filetype
@@ -136,6 +138,7 @@ X_uhbw = (df[df['site_ip']=='uhbw']
          .copy())
 y_uhbw = df.loc[df['site_ip']=='uhbw', outcome_mi].copy()
 
+LOGGER.info(f"Percentage of positive class in UHBW data: {100*y_uhbw.mean():.1f}%")
 uhbw_dev = ModelDeveloper(X_uhbw, y_uhbw, uhbw, config, LOGGER)
 
 uhbw_train_filename = train_data_path + uhbw + data_filetype
