@@ -40,7 +40,7 @@ df = load_csv('data/clean/processed_dataset.csv', LOGGER)
 df = df.drop(['nhs_number'], axis=1)
 
 # one hot encode categorical data
-cat_cols = ['sex', 'smoking', 'ae_provider', 'ip_provider', 'site_ae', 'site_ip',
+cat_cols = ['ethnicity', 'sex', 'smoking', 'ae_provider', 'ip_provider', 'site_ae', 'site_ip',
             'derived_trust_catchment', 'departure_season', 'diagnosis_description']
 
 for col in cat_cols:
