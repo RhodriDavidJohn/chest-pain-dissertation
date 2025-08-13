@@ -39,12 +39,25 @@ df = load_csv('data/clean/processed_dataset.csv', LOGGER)
 
 df = df.drop(['nhs_number'], axis=1)
 
+# create table of all variables
+variables = df.drop(['subsequent_mi_30days_diagnosis'], axis=1).columns
+variables_df = pd.DataFrame({'Variable name': variables})
+save_to_csv(variables_df, 'results/variable_table.csv', LOGGER)
+
+
+
 # one hot encode categorical data
 cat_cols = ['ethnicity', 'sex', 'smoking', 'ae_provider', 'ip_provider', 'site_ae', 'site_ip',
             'derived_trust_catchment', 'departure_season', 'diagnosis_description']
 
 for col in cat_cols:
     df = pd.get_dummies(df, prefix=[col], columns=[col], dtype=int)
+
+
+# create table of all variables after one hot encoding
+variables = df.drop(['subsequent_mi_30days_diagnosis'], axis=1).columns
+variables_df = pd.DataFrame({'Variable name': variables})
+save_to_csv(variables_df, 'results/post_preprocessing_variable_table.csv', LOGGER)
 
 
 # calculate the summary stats
