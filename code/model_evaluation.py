@@ -311,21 +311,21 @@ information_dict = {
         'y_pred': full_eval_dict['Random Forest'].pipe.predict(best_full_uhbw_X),
         'y_prob': full_eval_dict['Random Forest'].pipe.predict_proba(best_full_uhbw_X)[:, 1]
     },
-    f'NBT {nbt_eval_dict['Random Forest'].model_name}': {
-        'model_name': nbt_eval_dict['Random Forest'].model_name,
+    f'NBT {nbt_eval_dict['LightGBM'].model_name}': {
+        'model_name': nbt_eval_dict['LightGBM'].model_name,
         'model_data': 'NBT',
         'test_data': 'NBT',
-        'y_true': nbt_eval_dict['Random Forest'].y,
-        'y_pred': nbt_eval_dict['Random Forest'].pipe.predict(nbt_eval_dict['Random Forest'].X),
-        'y_prob': nbt_eval_dict['Random Forest'].pipe.predict_proba(nbt_eval_dict['Random Forest'].X)[:, 1]
+        'y_true': nbt_eval_dict['LightGBM'].y,
+        'y_pred': nbt_eval_dict['LightGBM'].pipe.predict(nbt_eval_dict['LightGBM'].X),
+        'y_prob': nbt_eval_dict['LightGBM'].pipe.predict_proba(nbt_eval_dict['LightGBM'].X)[:, 1]
     },
-    f'UHBW {uhbw_eval_dict['XGBoost'].model_name}': {
-        'model_name': uhbw_eval_dict['XGBoost'].model_name,
+    f'UHBW {uhbw_eval_dict['LightGBM'].model_name}': {
+        'model_name': uhbw_eval_dict['LightGBM'].model_name,
         'model_data': 'UHBW',
         'test_data': 'UHBW',
-        'y_true': uhbw_eval_dict['XGBoost'].y,
-        'y_pred': uhbw_eval_dict['XGBoost'].pipe.predict(uhbw_eval_dict['XGBoost'].X),
-        'y_prob': uhbw_eval_dict['XGBoost'].pipe.predict_proba(uhbw_eval_dict['XGBoost'].X)[:, 1]
+        'y_true': uhbw_eval_dict['LightGBM'].y,
+        'y_pred': uhbw_eval_dict['LightGBM'].pipe.predict(uhbw_eval_dict['LightGBM'].X),
+        'y_prob': uhbw_eval_dict['LightGBM'].pipe.predict_proba(uhbw_eval_dict['LightGBM'].X)[:, 1]
     }
 }
 
